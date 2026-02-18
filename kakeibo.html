@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>支出メモ</title>
+</head>
+<body>
+
+<h2>支出記録</h2>
+
+日付: <input type="date" id="date"><br><br>
+金額: <input type="number" id="amount"><br><br>
+
+支払い方法:
+<select id="type">
+  <option value="現金">現金</option>
+  <option value="カード">カード</option>
+</select><br><br>
+
+メモ: <input type="text" id="memo"><br><br>
+
+<button onclick="addRecord()">追加</button>
+
+<h3>記録一覧</h3>
+<ul id="list"></ul>
+
+<h3>今月合計</h3>
+現金: <span id="cashTotal">0</span>円<br>
+カード: <span id="cardTotal">0</span>円
+
+<script>
+let records = JSON.parse(localStorage.getItem("records")) || [];
+updateDisplay();
+
+function addRecord() {
+  const date = document.getElementById("date").value;
+  const amount = Number(document.getElementById("amount").value);
+  const type = document.getElementById("type").value;
+  const memo = document.getElementById("memo").value;
+
+  if (!date || !amount) return;
+
+records.push({ date, amount, type, memo });
+localStorage.setItem("records", JSON.stringify(records));
+updateDisplay();
+
+}
+
+function updateDisplay() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  let cash = 0;
+  let card = 0;
+
+  records.forEach(r => {
+    const li = document.createElement("li");
+    li.textContent = `${r.date} ${r.type} ${r.amount}円 ${r.memo}`;
+    list.appendChild(li);
+
+    if (r.type === "現金") cash += r.amount;
+    if (r.type === "カード") card += r.amount;
+  });
+
+  document.getElementById("cashTotal").textContent = cash;
+  document.getElementById("cardTotal").textContent = card;
+}
+</script>
+
+</body>
+</html>
