@@ -57,9 +57,13 @@ function updateDisplay() {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-let myCard = 0;
-let familyCard = 0;
-let cash = 0;
+  let myCard = 0;
+  let familyCard = 0;
+  let cash = 0;
+
+  const now = new Date();
+  const thisMonth = now.getMonth() + 1;
+  const thisYear = now.getFullYear();
 
   records.forEach((r, index) => {
     const li = document.createElement("li");
@@ -71,19 +75,20 @@ let cash = 0;
 
     list.appendChild(li);
 
+    const recordDate = new Date(r.date);
+    const recordMonth = recordDate.getMonth() + 1;
+    const recordYear = recordDate.getFullYear();
+
     if (recordMonth === thisMonth && recordYear === thisYear) {
-    if (r.account === "自分カード") myCard += r.amount;
-    if (r.account === "家族カード") familyCard += r.amount;
-    if (r.account === "現金") cash += r.amount;
-}
-
-
+      if (r.account === "自分カード") myCard += r.amount;
+      if (r.account === "家族カード") familyCard += r.amount;
+      if (r.account === "現金") cash += r.amount;
+    }
   });
 
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
-
 }
 
 function deleteRecord(index) {
