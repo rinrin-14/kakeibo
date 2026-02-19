@@ -115,6 +115,20 @@ function importCSV() {
     const text = e.target.result;
     const lines = text.split("\n");
 
+    // ★1行目を取得
+    const header = lines[0];
+
+    // ★カード自動判定
+    let accountType = "自分カード"; // デフォルト
+
+    if (header.includes("Ｏｌｉｖｅ")) {
+      accountType = "自分カード";
+    }
+    if (header.includes("ゴールドＶＩＳＡ")) {
+      accountType = "家族カード";
+    }
+
+
     // 1行目は会員情報なのでスキップ
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -132,7 +146,7 @@ function importCSV() {
       records.push({
         date: date.replace(/\//g, "-"),
         amount,
-        account: "自分カード",
+        account: accountType,
         shop,
         memo: "CSV"
       });
