@@ -12,6 +12,12 @@
 
 <h2>支出記録</h2>
 
+<button onclick="changeMonth(-1)">◀</button>
+<span id="monthLabel"></span>
+<button onclick="changeMonth(1)">▶</button>
+<br><br>
+
+
 日付: <input type="date" id="date"><br><br>
 金額: <input type="number" id="amount"><br><br>
 
@@ -42,6 +48,9 @@
 現金: <span id="cashTotal">0</span>円
 
 <script>
+
+let displayDate = new Date();
+
 let records = JSON.parse(localStorage.getItem("records")) || [];
 updateDisplay();
 
@@ -68,9 +77,6 @@ function updateDisplay() {
   let familyCard = 0;
   let cash = 0;
 
-  const now = new Date();
-  const thisMonth = now.getMonth() + 1;
-  const thisYear = now.getFullYear();
 
   records.forEach((r, index) => {
     const li = document.createElement("li");
@@ -86,7 +92,11 @@ function updateDisplay() {
     const recordMonth = recordDate.getMonth() + 1;
     const recordYear = recordDate.getFullYear();
 
-    if (recordMonth === thisMonth && recordYear === thisYear) {
+    const displayMonth = displayDate.getMonth() + 1;
+    const displayYear = displayDate.getFullYear();
+    
+    if (recordMonth === displayMonth && recordYear === displayYear)
+     {
       if (r.account === "自分カード") myCard += r.amount;
       if (r.account === "家族カード") familyCard += r.amount;
       if (r.account === "現金") cash += r.amount;
@@ -96,6 +106,12 @@ function updateDisplay() {
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
+
+  document.getElementById("monthLabel").textContent =
+    displayDate.getFullYear() + "年" +
+    (displayDate.getMonth() + 1) + "月";
+
+
 }
 
 function deleteRecord(index) {
@@ -103,6 +119,12 @@ function deleteRecord(index) {
   localStorage.setItem("records", JSON.stringify(records));
   updateDisplay();
 }
+
+function changeMonth(diff) {
+  displayDate.setMonth(displayDate.getMonth() + diff);
+  updateDisplay();
+}
+
 
 function importCSV() {
   const fileInput = document.getElementById("csvFile");
