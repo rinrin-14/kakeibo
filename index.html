@@ -29,6 +29,10 @@
 
 <button onclick="addRecord()">追加</button>
 
+<h3>CSV取り込み（三井住友）</h3>
+<input type="file" id="csvFile" accept=".csv">
+<button onclick="importCSV()">取り込み</button>
+
 <h3>記録一覧</h3>
 <ul id="list"></ul>
 
@@ -98,6 +102,48 @@ function deleteRecord(index) {
   records.splice(index, 1);
   localStorage.setItem("records", JSON.stringify(records));
   updateDisplay();
+}
+
+function importCSV() {
+  const fileInput = document.getElementById("csvFile");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const lines = text.split("\n");
+
+    // 1行目は会員情報なのでスキップ
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const cols = line.split(",");
+
+      const date = cols[0];
+      const shop = cols[1];
+      const amount = Number(cols[2]);
+
+      if (!date || !amount) continue;
+
+      // カードはとりあえず自分カードで登録
+      records.push({
+        date: date.replace(/\//g, "-"),
+        amount,
+        account: "自分カード",
+        shop,
+        memo: "CSV"
+      });
+    }
+
+    localStorage.setItem("records", JSON.stringify(records));
+    updateDisplay();
+    alert("CSV取り込み完了！");
+  };
+
+  reader.readAsText(file, "Shift_JIS"); // 三井住友はこれ重要
 }
 
 
