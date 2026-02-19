@@ -78,42 +78,34 @@ function updateDisplay() {
   let cash = 0;
 
 
-records.forEach((r, index) => {
-  const recordDate = new Date(r.date);
-  const recordMonth = recordDate.getMonth() + 1;
-  const recordYear = recordDate.getFullYear();
-
-  if (recordMonth === displayMonth && recordYear === displayYear) {
-
+  records.forEach((r, index) => {
     const li = document.createElement("li");
 
     li.innerHTML = `
-      ${r.date} ${r.account} ${r.amount}円 ${r.memo}
+      ${r.date} ${r.account} ${r.shop} ${r.amount}円 ${r.memo}
       <button onclick="deleteRecord(${index})">削除</button>
     `;
 
     list.appendChild(li);
 
-    if (r.account === "自分カード") myCard += r.amount;
-    if (r.account === "家族カード") familyCard += r.amount;
-    if (r.account === "現金") cash += r.amount;
-  }
-});
+    const recordDate = new Date(r.date);
+    const recordMonth = recordDate.getMonth() + 1;
+    const recordYear = recordDate.getFullYear();
 
-
-if (list.innerHTML === "") {
-  list.innerHTML = "<li>この月の記録はありません</li>";
-}
+    const displayMonth = displayDate.getMonth() + 1;
+    const displayYear = displayDate.getFullYear();
+    
+    if (recordMonth === displayMonth && recordYear === displayYear)
+     {
+      if (r.account === "自分カード") myCard += r.amount;
+      if (r.account === "家族カード") familyCard += r.amount;
+      if (r.account === "現金") cash += r.amount;
+    }
+  });
 
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
-
-  document.getElementById("monthLabel").textContent =
-    displayDate.getFullYear() + "年" +
-    (displayDate.getMonth() + 1) + "月";
-
-
 }
 
 function deleteRecord(index) {
