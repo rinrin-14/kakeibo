@@ -58,18 +58,22 @@ function updateDisplay() {
   let card = 0;
 
   records.forEach((r, index) => {
-  const li = document.createElement("li");
+    const li = document.createElement("li");
 
-  li.innerHTML = `
-    ${r.date} ${r.type} ${r.amount}円 ${r.memo}
-    <button onclick="deleteRecord(${index})">削除</button>
-  `;
+    li.innerHTML = `
+      ${r.date} ${r.type} ${r.amount}円 ${r.memo}
+      <button onclick="deleteRecord(${index})">削除</button>
+    `;
 
-  list.appendChild(li);
+    list.appendChild(li);
 
-  if (r.type === "現金") cash += r.amount;
-  if (r.type === "カード") card += r.amount;
-});
+    if (r.type === "現金") cash += r.amount;
+    if (r.type === "カード") card += r.amount;
+  });
+
+  document.getElementById("cashTotal").textContent = cash;
+  document.getElementById("cardTotal").textContent = card;
+}
 
 function deleteRecord(index) {
   records.splice(index, 1);
