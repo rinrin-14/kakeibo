@@ -16,10 +16,12 @@
 金額: <input type="number" id="amount"><br><br>
 
 支払い方法:
-<select id="type">
+<select id="account">
+  <option value="自分カード">自分カード</option>
+  <option value="家族カード">家族カード</option>
   <option value="現金">現金</option>
-  <option value="カード">カード</option>
-</select><br><br>
+</select>
+<br><br>
 
 メモ: <input type="text" id="memo"><br><br>
 
@@ -39,12 +41,12 @@ updateDisplay();
 function addRecord() {
   const date = document.getElementById("date").value;
   const amount = Number(document.getElementById("amount").value);
-  const type = document.getElementById("type").value;
+  const account = document.getElementById("account").value;
   const memo = document.getElementById("memo").value;
 
   if (!date || !amount) return;
 
-records.push({ date, amount, type, memo });
+records.push({ date, amount, account, memo });
 localStorage.setItem("records", JSON.stringify(records));
 updateDisplay();
 
@@ -61,14 +63,15 @@ function updateDisplay() {
     const li = document.createElement("li");
 
     li.innerHTML = `
-      ${r.date} ${r.type} ${r.amount}円 ${r.memo}
+      ${r.date} ${r.account} ${r.amount}円 ${r.memo}
       <button onclick="deleteRecord(${index})">削除</button>
     `;
 
     list.appendChild(li);
 
-    if (r.type === "現金") cash += r.amount;
-    if (r.type === "カード") card += r.amount;
+    if (r.account === "現金") cash += r.amount;
+    else card += r.amount;
+
   });
 
   document.getElementById("cashTotal").textContent = cash;
