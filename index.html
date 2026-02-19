@@ -31,8 +31,9 @@
 <ul id="list"></ul>
 
 <h3>今月合計</h3>
-現金: <span id="cashTotal">0</span>円<br>
-カード: <span id="cardTotal">0</span>円
+自分カード: <span id="myCardTotal">0</span>円<br>
+家族カード: <span id="familyCardTotal">0</span>円<br>
+現金: <span id="cashTotal">0</span>円
 
 <script>
 let records = JSON.parse(localStorage.getItem("records")) || [];
@@ -56,8 +57,9 @@ function updateDisplay() {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  let cash = 0;
-  let card = 0;
+let myCard = 0;
+let familyCard = 0;
+let cash = 0;
 
   records.forEach((r, index) => {
     const li = document.createElement("li");
@@ -69,13 +71,19 @@ function updateDisplay() {
 
     list.appendChild(li);
 
+    if (recordMonth === thisMonth && recordYear === thisYear) {
+    if (r.account === "自分カード") myCard += r.amount;
+    if (r.account === "家族カード") familyCard += r.amount;
     if (r.account === "現金") cash += r.amount;
-    else card += r.amount;
+}
+
 
   });
 
+  document.getElementById("myCardTotal").textContent = myCard;
+  document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
-  document.getElementById("cardTotal").textContent = card;
+
 }
 
 function deleteRecord(index) {
