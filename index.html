@@ -23,6 +23,8 @@
 </select>
 <br><br>
 
+店名: <input type="text" id="shop"><br><br>
+
 メモ: <input type="text" id="memo"><br><br>
 
 <button onclick="addRecord()">追加</button>
@@ -43,11 +45,12 @@ function addRecord() {
   const date = document.getElementById("date").value;
   const amount = Number(document.getElementById("amount").value);
   const account = document.getElementById("account").value;
+  const shop = document.getElementById("shop").value;
   const memo = document.getElementById("memo").value;
 
   if (!date || !amount) return;
 
-records.push({ date, amount, account, memo });
+records.push({ date, amount, account, shop, memo });
 localStorage.setItem("records", JSON.stringify(records));
 updateDisplay();
 
@@ -69,7 +72,7 @@ function updateDisplay() {
     const li = document.createElement("li");
 
     li.innerHTML = `
-      ${r.date} ${r.account} ${r.amount}円 ${r.memo}
+      ${r.date} ${r.account} ${r.shop} ${r.amount}円 ${r.memo}
       <button onclick="deleteRecord(${index})">削除</button>
     `;
 
