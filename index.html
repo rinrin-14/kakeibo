@@ -67,6 +67,32 @@ li {
 .month-nav button {
   width: 60px;
 }
+
+.item-top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.amount {
+  color: #333;
+}
+
+.item-sub {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.memo {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+li {
+  margin-bottom: 12px;
+}
+
 </style>
 
 </head>
@@ -168,11 +194,21 @@ function updateDisplay() {
       const li = document.createElement("li");
 
       li.innerHTML = `
-  	${r.date} ${r.account} ${r.category || "その他"}
-  	${r.shop} ${r.amount}円 ${r.memo}
-  	<button onclick="deleteRecord(${index})">削除</button>
+	  <div class="item-top">
+	    <span>${r.date} ${r.shop}</span>
+	    <span class="amount">${Number(r.amount).toLocaleString()}円</span>
+	  </div>
+
+	  <div class="item-sub">
+	    ${r.category || "その他"}｜${r.account}
+	  </div>
+
+	  ${r.memo ? `<div class="memo">${r.memo}</div>` : ""}
+
+	  <button onclick="deleteRecord(${index})">削除</button>
 	`;
-      list.appendChild(li);
+	list.appendChild(li);
+
 
       // 合計
       if (r.account === "自分カード") myCard += r.amount;
