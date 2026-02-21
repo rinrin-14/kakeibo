@@ -28,6 +28,17 @@
 
 店名: <input type="text" id="shop"><br><br>
 
+カテゴリ:
+<select id="category">
+  <option value="食費">食費</option>
+  <option value="外食">外食</option>
+  <option value="日用品">日用品</option>
+  <option value="交通">交通</option>
+  <option value="趣味">趣味</option>
+  <option value="その他">その他</option>
+</select>
+<br><br>
+
 メモ: <input type="text" id="memo"><br><br>
 
 <button onclick="addRecord()">追加</button>
@@ -89,10 +100,10 @@ function updateDisplay() {
       const li = document.createElement("li");
 
       li.innerHTML = `
-        ${r.date} | ${r.account} | ${r.shop} | ${r.amount}円 | ${r.memo}
-        <button onclick="deleteRecord(${index})">削除</button>
-      `;
-
+  	${r.date} ${r.account} 【${r.category || "その他"}】
+  	${r.shop} ${r.amount}円 ${r.memo}
+  	<button onclick="deleteRecord(${index})">削除</button>
+	`;
       list.appendChild(li);
 
       // 合計
@@ -111,11 +122,13 @@ function updateDisplay() {
   document.getElementById("cashTotal").textContent = cash;
 }
 
+
 function addRecord() {
   const date = document.getElementById("date").value;
   const amount = Number(document.getElementById("amount").value);
   const account = document.getElementById("account").value;
   const shop = document.getElementById("shop").value;
+  const category = document.getElementById("category").value;
   const memo = document.getElementById("memo").value;
 
   if (!date || !amount) {
@@ -128,6 +141,7 @@ function addRecord() {
     amount: amount,
     account: account,
     shop: shop,
+    category: category,
     memo: memo
   });
 
@@ -217,6 +231,7 @@ function importCSV() {
           amount: amount,
           account: accountType,
           shop: shop,
+          category: "その他"
           memo: "CSV"
         });
         addedCount++;
