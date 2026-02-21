@@ -77,31 +77,28 @@ function updateDisplay() {
   let familyCard = 0;
   let cash = 0;
 
-  // ★ここに移動！
   const displayMonth = displayDate.getMonth() + 1;
   const displayYear = displayDate.getFullYear();
 
   records.forEach((r, index) => {
-    const li = document.createElement("li");
 
-    li.innerHTML = `
-      ${r.date} ${r.account} ${r.shop} ${r.amount}円 ${r.memo}
-      <button onclick="deleteRecord(${index})">削除</button>
-    `;
-
-    if (recordMonth === displayMonth && recordYear === displayYear) {
-	  list.appendChild(li);
-
-	  if (r.account === "自分カード") myCard += r.amount;
-	  if (r.account === "家族カード") familyCard += r.amount;
-	  if (r.account === "現金") cash += r.amount;
-	}
-
+    // ★先に日付を取得（ここが重要）
     const recordDate = new Date(r.date);
     const recordMonth = recordDate.getMonth() + 1;
     const recordYear = recordDate.getFullYear();
 
+    // ★この月だけ処理
     if (recordMonth === displayMonth && recordYear === displayYear) {
+
+      const li = document.createElement("li");
+
+      li.innerHTML = `
+        ${r.date} ${r.account} ${r.shop} ${r.amount}円 ${r.memo}
+        <button onclick="deleteRecord(${index})">削除</button>
+      `;
+
+      list.appendChild(li);
+
       if (r.account === "自分カード") myCard += r.amount;
       if (r.account === "家族カード") familyCard += r.amount;
       if (r.account === "現金") cash += r.amount;
