@@ -106,6 +106,10 @@ function updateDisplay() {
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
+
+  document.getElementById("monthLabel").textContent =
+    displayYear + "年" + displayMonth + "月";
+
 }
 
 function deleteRecord(index) {
