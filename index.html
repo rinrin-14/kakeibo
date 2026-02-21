@@ -1,75 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>支出メモ</title>
-</head>
-<body>
+// =======================
+// 初期データ読み込み
+// =======================
+let records = JSON.parse(localStorage.getItem("records")) || [];
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<h2>支出記録</h2>
-
-<button onclick="changeMonth(-1)">◀</button>
-<span id="monthLabel"></span>
-<button onclick="changeMonth(1)">▶</button>
-<br><br>
-
-
-日付: <input type="date" id="date"><br><br>
-金額: <input type="number" id="amount"><br><br>
-
-支払い方法:
-<select id="account">
-  <option value="自分カード">自分カード</option>
-  <option value="家族カード">家族カード</option>
-  <option value="現金">現金</option>
-</select>
-<br><br>
-
-店名: <input type="text" id="shop"><br><br>
-
-メモ: <input type="text" id="memo"><br><br>
-
-<button onclick="addRecord()">追加</button>
-
-<h3>CSV取り込み（三井住友）</h3>
-<input type="file" id="csvFile" accept=".csv">
-<button onclick="importCSV()">取り込み</button>
-
-<h3>記録一覧</h3>
-<ul id="list"></ul>
-
-<h3>今月合計</h3>
-自分カード: <span id="myCardTotal">0</span>円<br>
-家族カード: <span id="familyCardTotal">0</span>円<br>
-現金: <span id="cashTotal">0</span>円
-
-<script>
-
+// 表示中の年月
 let displayDate = new Date();
 
-let records = JSON.parse(localStorage.getItem("records")) || [];
-updateDisplay();
+// =======================
+// ページ読み込み時
+// =======================
+window.onload = function () {
+  updateDisplay();
+};
 
-function addRecord() {
-  const date = document.getElementById("date").value;
-  const amount = Number(document.getElementById("amount").value);
-  const account = document.getElementById("account").value;
-  const shop = document.getElementById("shop").value;
-  const memo = document.getElementById("memo").value;
-
-  if (!date || !amount) return;
-
-records.push({ date, amount, account, shop, memo });
-localStorage.setItem("records", JSON.stringify(records));
-updateDisplay();
-
-}
-
+// =======================
+// 月表示更新
+// =======================
 function updateDisplay() {
+  const displayMonth = displayDate.getMonth() + 1;
+  const displayYear = displayDate.getFullYear();
+
+  // 年月ラベル
+  document.getElementById("monthLabel").textContent =
+    displayYear + "年" + displayMonth + "月";
+
   const list = document.getElementById("list");
   list.innerHTML = "";
 
@@ -77,54 +31,63 @@ function updateDisplay() {
   let familyCard = 0;
   let cash = 0;
 
-  const displayMonth = displayDate.getMonth() + 1;
-  const displayYear = displayDate.getFullYear();
-
   records.forEach((r, index) => {
-
-    // ★先に日付を取得（ここが重要）
     const recordDate = new Date(r.date);
     const recordMonth = recordDate.getMonth() + 1;
     const recordYear = recordDate.getFullYear();
 
-    // ★この月だけ処理
+    // 表示月だけ
     if (recordMonth === displayMonth && recordYear === displayYear) {
-
       const li = document.createElement("li");
 
       li.innerHTML = `
-        ${r.date} ${r.account} ${r.shop} ${r.amount}円 ${r.memo}
+        ${r.date} | ${r.account} | ${r.shop} | ${r.amount}円 | ${r.memo}
         <button onclick="deleteRecord(${index})">削除</button>
       `;
 
       list.appendChild(li);
 
+      // 合計
       if (r.account === "自分カード") myCard += r.amount;
       if (r.account === "家族カード") familyCard += r.amount;
       if (r.account === "現金") cash += r.amount;
     }
   });
 
+  if (list.innerHTML === "") {
+    list.innerHTML = "<li>この月の記録はありません</li>";
+  }
+
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
-
-  document.getElementById("monthLabel").textContent =
-    displayYear + "年" + displayMonth + "月";
 }
 
+// =======================
+// 月切替
+// =======================
+function prevMonth() {
+  displayDate.setMonth(displayDate.getMonth() - 1);
+  updateDisplay();
+}
+
+function nextMonth() {
+  displayDate.setMonth(displayDate.getMonth() + 1);
+  updateDisplay();
+}
+
+// =======================
+// 削除
+// =======================
 function deleteRecord(index) {
   records.splice(index, 1);
   localStorage.setItem("records", JSON.stringify(records));
   updateDisplay();
 }
 
-function changeMonth(diff) {
-  displayDate.setMonth(displayDate.getMonth() + diff);
-  updateDisplay();
-}
-
-
+// =======================
+// CSV取り込み（重複防止付き）
+// =======================
 function importCSV() {
   const fileInput = document.getElementById("csvFile");
   const file = fileInput.files[0];
@@ -132,15 +95,13 @@ function importCSV() {
 
   const reader = new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const text = e.target.result;
     const lines = text.split("\n");
 
-    // ★1行目を取得
+    // 1行目でカード判定
     const header = lines[0];
-
-    // ★カード自動判定
-    let accountType = "自分カード"; // デフォルト
+    let accountType = "自分カード";
 
     if (header.includes("Ｏｌｉｖｅ")) {
       accountType = "自分カード";
@@ -149,50 +110,47 @@ function importCSV() {
       accountType = "家族カード";
     }
 
+    let addedCount = 0;
 
-    // 1行目は会員情報なのでスキップ
-for (let i = 1; i < lines.length; i++) {
-  const line = lines[i].trim();
-  if (!line) continue;
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
 
-  const cols = line.split(",");
+      const cols = line.split(",");
 
-  const date = cols[0];
-  const shop = cols[1];
-  const amount = Number(cols[2]);
+      const date = cols[0];
+      const shop = cols[1];
+      const amount = Number(cols[2]);
 
-  if (!date || !amount) continue;
+      if (!date || !amount) continue;
 
-  const formattedDate = date.replace(/\//g, "-");
+      const formattedDate = date.replace(/\//g, "-");
 
-  const isDuplicate = records.some(r =>
-    r.date === formattedDate &&
-    r.amount === amount &&
-    r.shop === shop &&
-    r.account === accountType
-  );
+      // 重複チェック
+      const isDuplicate = records.some(r =>
+        r.date === formattedDate &&
+        r.amount === amount &&
+        r.shop === shop &&
+        r.account === accountType
+      );
 
-  if (!isDuplicate) {
-    records.push({
-      date: formattedDate,
-      amount,
-      account: accountType,
-      shop,
-      memo: "CSV"
-    });
-  }
-}  // ← ★for文ここで閉じる！
+      if (!isDuplicate) {
+        records.push({
+          date: formattedDate,
+          amount: amount,
+          account: accountType,
+          shop: shop,
+          memo: "CSV"
+        });
+        addedCount++;
+      }
+    }
 
-// ★forの外に出す
-localStorage.setItem("records", JSON.stringify(records));
-updateDisplay();
-alert("CSV取り込み完了！");
+    localStorage.setItem("records", JSON.stringify(records));
+    updateDisplay();
+
+    alert(addedCount + "件取り込みました");
   };
 
-  reader.readAsText(file, "Shift_JIS"); // 三井住友はこれ重要
+  reader.readAsText(file, "Shift_JIS");
 }
-
-
-</script>
-</body>
-</html>
