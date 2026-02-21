@@ -77,6 +77,9 @@ function updateDisplay() {
   let familyCard = 0;
   let cash = 0;
 
+  // ★ここに移動！
+  const displayMonth = displayDate.getMonth() + 1;
+  const displayYear = displayDate.getFullYear();
 
   records.forEach((r, index) => {
     const li = document.createElement("li");
@@ -92,11 +95,7 @@ function updateDisplay() {
     const recordMonth = recordDate.getMonth() + 1;
     const recordYear = recordDate.getFullYear();
 
-    const displayMonth = displayDate.getMonth() + 1;
-    const displayYear = displayDate.getFullYear();
-    
-    if (recordMonth === displayMonth && recordYear === displayYear)
-     {
+    if (recordMonth === displayMonth && recordYear === displayYear) {
       if (r.account === "自分カード") myCard += r.amount;
       if (r.account === "家族カード") familyCard += r.amount;
       if (r.account === "現金") cash += r.amount;
@@ -109,7 +108,6 @@ function updateDisplay() {
 
   document.getElementById("monthLabel").textContent =
     displayYear + "年" + displayMonth + "月";
-
 }
 
 function deleteRecord(index) {
