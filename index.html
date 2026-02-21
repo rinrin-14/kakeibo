@@ -1,3 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>支出メモ</title>
+</head>
+<body>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<h2>支出記録</h2>
+
+<button onclick="changeMonth(-1)">◀</button>
+<span id="monthLabel"></span>
+<button onclick="changeMonth(1)">▶</button>
+<br><br>
+
+
+日付: <input type="date" id="date"><br><br>
+金額: <input type="number" id="amount"><br><br>
+
+支払い方法:
+<select id="account">
+  <option value="自分カード">自分カード</option>
+  <option value="家族カード">家族カード</option>
+  <option value="現金">現金</option>
+</select>
+<br><br>
+
+店名: <input type="text" id="shop"><br><br>
+
+メモ: <input type="text" id="memo"><br><br>
+
+<button onclick="addRecord()">追加</button>
+
+<h3>CSV取り込み（三井住友）</h3>
+<input type="file" id="csvFile" accept=".csv">
+<button onclick="importCSV()">取り込み</button>
+
+<h3>記録一覧</h3>
+<ul id="list"></ul>
+
+<h3>今月合計</h3>
+自分カード: <span id="myCardTotal">0</span>円<br>
+家族カード: <span id="familyCardTotal">0</span>円<br>
+現金: <span id="cashTotal">0</span>円
+
+<script>
+
 // =======================
 // 初期データ読み込み
 // =======================
@@ -154,3 +205,8 @@ function importCSV() {
 
   reader.readAsText(file, "Shift_JIS");
 }
+
+
+</script>
+</body>
+</html>
