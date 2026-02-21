@@ -2,20 +2,17 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>支出メモ</title>
 </head>
 <body>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-
 <h2>支出記録</h2>
 
-<button onclick="changeMonth(-1)">◀</button>
+<button onclick="prevMonth()">＜</button>
 <span id="monthLabel"></span>
-<button onclick="changeMonth(1)">▶</button>
-<br><br>
+<button onclick="nextMonth()">＞</button>
 
 
 日付: <input type="date" id="date"><br><br>
@@ -112,6 +109,35 @@ function updateDisplay() {
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
+}
+
+function addRecord() {
+  const date = document.getElementById("date").value;
+  const amount = Number(document.getElementById("amount").value);
+  const account = document.getElementById("account").value;
+  const shop = document.getElementById("shop").value;
+  const memo = document.getElementById("memo").value;
+
+  if (!date || !amount) {
+    alert("日付と金額は必須です");
+    return;
+  }
+
+  records.push({
+    date: date,
+    amount: amount,
+    account: account,
+    shop: shop,
+    memo: memo
+  });
+
+  localStorage.setItem("records", JSON.stringify(records));
+  updateDisplay();
+
+  // 入力リセット
+  document.getElementById("amount").value = "";
+  document.getElementById("shop").value = "";
+  document.getElementById("memo").value = "";
 }
 
 // =======================
