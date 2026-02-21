@@ -89,7 +89,13 @@ function updateDisplay() {
       <button onclick="deleteRecord(${index})">削除</button>
     `;
 
-    list.appendChild(li);
+    if (recordMonth === displayMonth && recordYear === displayYear) {
+	  list.appendChild(li);
+
+	  if (r.account === "自分カード") myCard += r.amount;
+	  if (r.account === "家族カード") familyCard += r.amount;
+	  if (r.account === "現金") cash += r.amount;
+	}
 
     const recordDate = new Date(r.date);
     const recordMonth = recordDate.getMonth() + 1;
