@@ -17,7 +17,7 @@ body {
   margin: 0 auto;
   background: white;
   min-height: 100vh;
-  padding: 20px;
+  padding: 16px;
   box-sizing: border-box;
 }
 
@@ -27,10 +27,10 @@ h2 {
 
 input, select, button {
   width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  margin-bottom: 12px;
-  font-size: 16px;
+  padding: 8px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
   box-sizing: border-box;
 }
 
@@ -45,96 +45,79 @@ button:hover {
   opacity: 0.9;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  background: #f8f9fb;
-  margin-bottom: 8px;
-  padding: 10px;
-  border-radius: 6px;
-}
-
+/* 月ナビ */
 .month-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .month-nav button {
   width: 60px;
 }
 
-.item-top {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-}
-
-.amount {
-  color: #333;
-}
-
-.item-sub {
-  font-size: 13px;
-  color: #666;
-  margin-top: 4px;
-}
-
-.memo {
-  font-size: 13px;
-  margin-top: 4px;
+/* リスト */
+#list {
+  padding: 0;
+  margin: 0;
 }
 
 li {
-  margin-bottom: 12px;
-}
-
-li {
-  padding: 6px 4px;
+  list-style: none;
+  padding: 6px 8px;
   border-bottom: 1px solid #eee;
-  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* 上段 */
 .item-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 14px;
+  width: 100%;
 }
 
 .date {
-  width: 80px;
+  width: 90px;
+  flex-shrink: 0;
   color: #666;
 }
 
 .shop {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .amount {
-  font-weight: bold;
-  width: 80px;
+  width: 90px;
   text-align: right;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
+/* 下段 */
 .item-sub {
   font-size: 12px;
   color: #888;
-  margin-left: 86px;
+  margin-left: 98px;
 }
 
-/* ←ここが削除ボタンの仕上げ */
+/* 削除ボタン */
 .delete-btn {
   background: none;
   border: none;
   color: #bbb;
   font-size: 14px;
   cursor: pointer;
-  margin-left: 4px;
+  flex-shrink: 0;
+  width: auto;
+  padding: 0;
+  margin: 0;
 }
 
 .delete-btn:hover {
