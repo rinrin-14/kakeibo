@@ -151,31 +151,42 @@ function importCSV() {
 
 
     // 1行目は会員情報なのでスキップ
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
+for (let i = 1; i < lines.length; i++) {
+  const line = lines[i].trim();
+  if (!line) continue;
 
-      const cols = line.split(",");
+  const cols = line.split(",");
 
-      const date = cols[0];
-      const shop = cols[1];
-      const amount = Number(cols[2]);
+  const date = cols[0];
+  const shop = cols[1];
+  const amount = Number(cols[2]);
 
-      if (!date || !amount) continue;
+  if (!date || !amount) continue;
 
-      // カードはとりあえず自分カードで登録
-      records.push({
-        date: date.replace(/\//g, "-"),
-        amount,
-        account: accountType,
-        shop,
-        memo: "CSV"
-      });
-    }
+  const formattedDate = date.replace(/\//g, "-");
 
-    localStorage.setItem("records", JSON.stringify(records));
-    updateDisplay();
-    alert("CSV取り込み完了！");
+  const isDuplicate = records.some(r =>
+    r.date === formattedDate &&
+    r.amount === amount &&
+    r.shop === shop &&
+    r.account === accountType
+  );
+
+  if (!isDuplicate) {
+    records.push({
+      date: formattedDate,
+      amount,
+      account: accountType,
+      shop,
+      memo: "CSV"
+    });
+  }
+}  // ← ★for文ここで閉じる！
+
+// ★forの外に出す
+localStorage.setItem("records", JSON.stringify(records));
+updateDisplay();
+alert("CSV取り込み完了！");
   };
 
   reader.readAsText(file, "Shift_JIS"); // 三井住友はこれ重要
