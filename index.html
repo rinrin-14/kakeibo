@@ -45,6 +45,34 @@ button:hover {
   opacity: 0.9;
 }
 
+#summaryBox {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+#bigTotal {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+#bigTotal span {
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+}
+
+.filter-panel {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 8px 0;
+  background: #f9f9f9;
+  font-size: 14px;
+}
+
 /* 月ナビ */
 .month-nav {
   display: flex;
@@ -131,6 +159,13 @@ li {
 <body>
 <div class="container">
 
+<div class="tabs">
+  <button onclick="showPage('main')">記録</button>
+  <button onclick="showPage('report')">月次レポート</button>
+</div>
+
+<div id="mainPage">
+
 <h2>支出記録</h2>
 
 <div class="month-nav">
@@ -139,6 +174,41 @@ li {
   <button onclick="nextMonth()">＞</button>
 </div>
 
+<h3>カテゴリフィルター</h3>
+<button onclick="toggleFilter()">フィルター</button>
+
+<div id="filterPanel" class="filter-panel" style="display:none;">
+  <button onclick="selectAllCategories()">全選択</button>
+  <button onclick="clearAllCategories()">全解除</button>
+  <br><br>
+
+  <label><input type="checkbox" value="食費" checked onchange="updateDisplay()"> 食費</label><br>
+  <label><input type="checkbox" value="外食" checked onchange="updateDisplay()"> 外食</label><br>
+  <label><input type="checkbox" value="日用品" checked onchange="updateDisplay()"> 日用品</label><br>
+  <label><input type="checkbox" value="交通" checked onchange="updateDisplay()"> 交通</label><br>
+  <label><input type="checkbox" value="固定費" checked onchange="updateDisplay()"> 固定費</label><br>
+  <label><input type="checkbox" value="レジャー" checked onchange="updateDisplay()"> レジャー</label><br>
+  <label><input type="checkbox" value="その他" checked onchange="updateDisplay()"> その他</label>
+</div>
+
+<h3>今月サマリー</h3>
+
+<div id="summaryBox">
+
+  <div id="bigTotal">
+    今月合計<br>
+    <span id="totalAmount">0</span> 円
+  </div>
+
+  <hr>
+
+  自分カード：<span id="myCardTotal">0</span>円<br>
+  家族カード：<span id="familyCardTotal">0</span>円<br>
+  現金：<span id="cashTotal">0</span>円<br><br>
+
+  <div id="categoryTotals"></div>
+
+</div>
 
 日付: <input type="date" id="date"><br><br>
 金額: <input type="number" id="amount"><br><br>
@@ -159,7 +229,8 @@ li {
   <option value="外食">外食</option>
   <option value="日用品">日用品</option>
   <option value="交通">交通</option>
-  <option value="趣味">趣味</option>
+  <option value="固定費">固定費</option>
+  <option value="レジャー">レジャー</option>
   <option value="その他">その他</option>
 </select>
 <br><br>
@@ -172,13 +243,28 @@ li {
 <input type="file" id="csvFile" accept=".csv">
 <button onclick="importCSV()">取り込み</button>
 
+<button onclick="showAll()">全て</button>
+<button onclick="showOthers()">その他だけ</button>
+<br><br>
+
 <h3>記録一覧</h3>
 <ul id="list"></ul>
 
-<h3>今月合計</h3>
-自分カード: <span id="myCardTotal">0</span>円<br>
-家族カード: <span id="familyCardTotal">0</span>円<br>
-現金: <span id="cashTotal">0</span>円
+</div>
+
+<div id="reportPage" style="display:none;">
+  <h2>月次レポート</h2>
+
+  <div id="monthCompare"></div>
+  <hr>
+
+  <h3>月次推移</h3>
+  <canvas id="monthlyChart" height="200"></canvas>
+
+  <hr>
+  <div id="monthlyList"></div>
+</div>
+
 
 <script>
 
@@ -187,8 +273,106 @@ li {
 // =======================
 let records = JSON.parse(localStorage.getItem("records")) || [];
 
+const categoryRules = [
+
+  // ===== 食費（スーパー・コンビニ）=====
+  { keyword: "セブン", category: "食費" },
+  { keyword: "ファミマ", category: "食費" },
+  { keyword: "ローソン", category: "食費" },
+  { keyword: "マルエツ", category: "食費" },
+  { keyword: "ライフ", category: "食費" },
+  { keyword: "ハナマサ", category: "食費" },
+
+  // ===== 外食 =====
+  { keyword: "松屋", category: "外食" },
+  { keyword: "鳥貴族", category: "外食" },
+  { keyword: "ドトール", category: "外食" },
+  { keyword: "そば", category: "外食" },
+  { keyword: "カフェ", category: "外食" },
+  { keyword: "cafe", category: "外食" },
+  { keyword: "CAFE", category: "外食" },
+  { keyword: "ｃａｆｅ", category: "外食" },
+  { keyword: "ＣＡＦＥ", category: "外食" },
+  { keyword: "コーヒー", category: "外食" },
+  { keyword: "coffee", category: "外食" },
+  { keyword: "COFFEE", category: "外食" },
+  { keyword: "ｃｏｆｆｅｅ", category: "外食" },
+  { keyword: "ＣＯＦＦＥＥ", category: "外食" },
+  { keyword: "レストラン", category: "外食" },
+  { keyword: "ブルーシール", category: "外食" },
+  { keyword: "Ａ＆Ｗ", category: "外食" },
+
+  { keyword: "ラクテンペイ", category: "外食" },
+  { keyword: "楽天ペイ", category: "外食" },
+
+  // ===== 日用品 =====
+  { keyword: "AMAZON.CO.JP", category: "日用品" },
+  { keyword: "ＡＭＡＺＯＮ．ＣＯ", category: "日用品" },
+  { keyword: "AMAZON", category: "日用品" },
+  { keyword: "ＡＭＡＺＯＮ", category: "日用品" },
+  { keyword: "楽天", category: "日用品" },
+  { keyword: "無印", category: "日用品" },
+  { keyword: "ワッツ", category: "日用品" },
+  { keyword: "ドン・キホーテ", category: "日用品" },
+  { keyword: "マツモトキヨシ", category: "日用品" },
+  { keyword: "ドラッグ", category: "日用品" },
+
+  // ===== 交通 =====
+  { keyword: "バス", category: "交通" },
+  { keyword: "交通", category: "交通" },
+  { keyword: "京成", category: "交通" },
+  { keyword: "スカイライナー", category: "交通" },
+  { keyword: "タクシー", category: "交通" },
+  { keyword: "キャブ", category: "交通" },
+  { keyword: "第一交通", category: "交通" },
+  { keyword: "国際自動車", category: "交通" },
+  { keyword: "ETC", category: "交通" },
+  { keyword: "ＥＴＣ", category: "交通" },
+  { keyword: "給油", category: "交通" },
+
+  // ===== 固定費 =====
+  { keyword: "東京電力", category: "固定費" },
+  { keyword: "電力", category: "固定費" },
+  { keyword: "水道", category: "固定費" },
+
+  // ===== レジャー・旅行 =====
+  { keyword: "ホテル", category: "レジャー" },
+  { keyword: "レンタカー", category: "レジャー" },
+  { keyword: "skyticket", category: "レジャー" },
+  { keyword: "ｓｋｙｔｉｃｋｅｔ", category: "レジャー" },
+  { keyword: "水族館", category: "レジャー" },
+  { keyword: "じゃらん", category: "レジャー" },
+  { keyword: "御菓子御殿", category: "レジャー" },
+
+  // ===== 決済系（中身不明）=====
+  { keyword: "Square", category: "その他" },
+  { keyword: "Ｓｑｕａｒｅ", category: "その他" },
+  { keyword: "楽天ペイ", category: "その他" }
+];
+
+function detectCategory(shopName) {
+  for (let rule of categoryRules) {
+    if (shopName.includes(rule.keyword)) {
+      return rule.category;
+    }
+  }
+  return "その他";
+}
+
 // 表示中の年月
 let displayDate = new Date();
+
+let filterCategory = "all";
+
+const categories = [
+  "食費",
+  "外食",
+  "日用品",
+  "交通",
+  "固定費",
+  "レジャー",
+  "その他"
+];
 
 // =======================
 // ページ読み込み時
@@ -197,7 +381,101 @@ window.onload = function () {
   updateDisplay();
 };
 
+function showPage(page) {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("reportPage").style.display = "none";
 
+  if (page === "main") {
+    document.getElementById("mainPage").style.display = "block";
+  } else {
+    document.getElementById("reportPage").style.display = "block";
+    updateMonthlyReport();
+  }
+}
+
+function updateMonthlyReport() {
+
+  let monthMap = {};
+
+  records.forEach(r => {
+    const d = new Date(r.date);
+    const key = d.getFullYear() + "-" + (d.getMonth() + 1);
+    monthMap[key] = (monthMap[key] || 0) + Number(r.amount);
+  });
+
+  drawMonthlyChart(monthMap);
+
+  const sortedMonths = Object.keys(monthMap).sort((a,b)=>{
+    return new Date(a) - new Date(b);
+  });
+
+  // 一覧表示
+  const listDiv = document.getElementById("monthlyList");
+  listDiv.innerHTML = "";
+
+  sortedMonths.slice().reverse().forEach(m => {
+    listDiv.innerHTML += `${m}：${monthMap[m].toLocaleString()}円<br>`;
+  });
+
+  // 前月比較
+  const compareDiv = document.getElementById("monthCompare");
+
+  if (sortedMonths.length >= 2) {
+    const last = sortedMonths[sortedMonths.length - 1];
+    const prev = sortedMonths[sortedMonths.length - 2];
+
+    const diff = monthMap[last] - monthMap[prev];
+    const sign = diff >= 0 ? "+" : "";
+
+    compareDiv.innerHTML = `
+      今月：${monthMap[last].toLocaleString()}円<br>
+      前月：${monthMap[prev].toLocaleString()}円<br>
+      差：${sign}${diff.toLocaleString()}円
+    `;
+  } else {
+    compareDiv.innerHTML = "データがまだ少ないです";
+  }
+}
+
+
+function detectCategory(shopName) {
+  if (!shopName) return "その他";
+
+  const s = shopName.toUpperCase();
+
+  for (let rule of categoryRules) {
+    if (s.includes(rule.keyword.toUpperCase())) {
+      return rule.category;
+    }
+  }
+  return "その他";
+}
+
+// フィルター開閉
+function toggleFilter() {
+  const panel = document.getElementById("filterPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+}
+
+// 全選択
+function selectAllCategories() {
+  const checks = document.querySelectorAll("#filterPanel input[type='checkbox']");
+  checks.forEach(c => c.checked = true);
+  updateDisplay();
+}
+
+// 全解除
+function clearAllCategories() {
+  const checks = document.querySelectorAll("#filterPanel input[type='checkbox']");
+  checks.forEach(c => c.checked = false);
+  updateDisplay();
+}
+
+// 選択カテゴリ取得（updateDisplayで使う）
+function getSelectedCategories() {
+  const checks = document.querySelectorAll("#filterPanel input[type='checkbox']:checked");
+  return Array.from(checks).map(c => c.value);
+}
 
 // =======================
 // 月表示更新
@@ -213,51 +491,134 @@ function updateDisplay() {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
+  // ===== 選択カテゴリ =====
+  const checkedBoxes = document.querySelectorAll("#filterPanel input:checked");
+  const selectedCategories = Array.from(checkedBoxes).map(cb => cb.value);
+
   let myCard = 0;
   let familyCard = 0;
   let cash = 0;
 
-  records.forEach((r, index) => {
-    const recordDate = new Date(r.date);
-    const recordMonth = recordDate.getMonth() + 1;
-    const recordYear = recordDate.getFullYear();
+  let categoryMap = {};
 
-    // 表示月だけ
-    if (recordMonth === displayMonth && recordYear === displayYear) {
-      const li = document.createElement("li");
+  // ===== 月フィルター =====
+  const filteredRecords = records.filter(r => {
+    const d = new Date(r.date);
+    return (
+      d.getMonth() + 1 === displayMonth &&
+      d.getFullYear() === displayYear
+    );
+  });
 
-	li.innerHTML = `
-	  <div class="item-row">
-	    <span class="date">${r.date}</span>
-	    <span class="shop">${r.shop}</span>
-	    <span class="amount">${Number(r.amount).toLocaleString()}円</span>
-	    <button class="delete-btn" onclick="deleteRecord(${index})">×</button>
-	  </div>
+  // ===== 表示 =====
+  filteredRecords.forEach((r, originalIndex) => {
+    const category = r.category || "その他";
 
-	  <div class="item-sub">
-	    ${r.category || "その他"}｜${r.account}
-	    ${r.memo ? `｜${r.memo}` : ""}
-	  </div>
-	`;
-	list.appendChild(li);
+    // カテゴリフィルター
+    if (!selectedCategories.includes(category)) return;
 
+    const li = document.createElement("li");
 
-      // 合計
-      if (r.account === "自分カード") myCard += r.amount;
-      if (r.account === "家族カード") familyCard += r.amount;
-      if (r.account === "現金") cash += r.amount;
-    }
+    li.innerHTML = `
+      <div class="item-row">
+        <span class="date">${r.date}</span>
+        <span class="shop">${r.shop}</span>
+        <span class="amount">${Number(r.amount).toLocaleString()}円</span>
+        <button class="delete-btn" onclick="deleteRecord(${originalIndex})">×</button>
+      </div>
+
+      <div class="item-sub">
+        <select onchange="changeCategory(${originalIndex}, this.value)">
+          <option value="食費" ${category === "食費" ? "selected" : ""}>食費</option>
+          <option value="外食" ${category === "外食" ? "selected" : ""}>外食</option>
+          <option value="日用品" ${category === "日用品" ? "selected" : ""}>日用品</option>
+          <option value="交通" ${category === "交通" ? "selected" : ""}>交通</option>
+          <option value="固定費" ${category === "固定費" ? "selected" : ""}>固定費</option>
+          <option value="レジャー" ${category === "レジャー" ? "selected" : ""}>レジャー</option>
+          <option value="その他" ${category === "その他" ? "selected" : ""}>その他</option>
+        </select>
+        ｜${r.account}
+        ${r.memo ? `｜${r.memo}` : ""}
+      </div>
+    `;
+
+    list.appendChild(li);
+
+    // カード合計
+    if (r.account === "自分カード") myCard += r.amount;
+    if (r.account === "家族カード") familyCard += r.amount;
+    if (r.account === "現金") cash += r.amount;
+
+    // カテゴリ合計
+    categoryMap[category] = (categoryMap[category] || 0) + Number(r.amount);
   });
 
   if (list.innerHTML === "") {
-    list.innerHTML = "<li>この月の記録はありません</li>";
+    list.innerHTML = "<li>該当する記録がありません</li>";
   }
 
+  // ===== カテゴリ表示 =====
+  const categoryDiv = document.getElementById("categoryTotals");
+  categoryDiv.innerHTML = "";
+
+  for (let cat in categoryMap) {
+    categoryDiv.innerHTML +=
+      `${cat}：${categoryMap[cat].toLocaleString()}円<br>`;
+  }
+
+  // ===== 総合計 =====
   document.getElementById("myCardTotal").textContent = myCard;
   document.getElementById("familyCardTotal").textContent = familyCard;
   document.getElementById("cashTotal").textContent = cash;
+
+  const total = myCard + familyCard + cash;
+  document.getElementById("totalAmount").textContent = total.toLocaleString();
 }
 
+function showAll() {
+  filterCategory = "all";
+  updateDisplay();
+}
+
+function showOthers() {
+  filterCategory = "others";
+  updateDisplay();
+}
+
+function drawMonthlyChart(monthMap) {
+  const canvas = document.getElementById("monthlyChart");
+  const ctx = canvas.getContext("2d");
+
+  const months = Object.keys(monthMap).sort((a,b)=> new Date(a) - new Date(b));
+  const values = months.map(m => monthMap[m]);
+
+  if (months.length === 0) return;
+
+  canvas.width = canvas.parentElement.offsetWidth;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const max = Math.max(...values);
+  const barWidth = canvas.width / months.length;
+
+  months.forEach((month, i) => {
+    const value = monthMap[month];
+    const height = (value / max) * (canvas.height - 40);
+
+    const x = i * barWidth + 10;
+    const y = canvas.height - height - 20;
+
+    // 棒
+    ctx.fillStyle = "#4CAF50";
+    ctx.fillRect(x, y, barWidth - 20, height);
+
+    // 月ラベル
+    ctx.fillStyle = "#333";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(month.split("-")[1] + "月", x + (barWidth - 20)/2, canvas.height - 5);
+  });
+}
 
 function addRecord() {
   const date = document.getElementById("date").value;
@@ -353,6 +714,9 @@ function importCSV() {
 
       const formattedDate = date.replace(/\//g, "-");
 
+      const category = detectCategory(shop);
+
+
       // 重複チェック
       const isDuplicate = records.some(r =>
         r.date === formattedDate &&
@@ -363,13 +727,13 @@ function importCSV() {
 
       if (!isDuplicate) {
         records.push({
-          date: formattedDate,
-          amount: amount,
-          account: accountType,
-          shop: shop,
-          category: "その他",
-          memo: "CSV"
-        });
+	  date: formattedDate,
+	  amount,
+	  account: accountType,
+	  shop,
+	  category: category,
+	  memo: "CSV"
+	});
         addedCount++;
       }
     }
@@ -381,6 +745,12 @@ function importCSV() {
   };
 
   reader.readAsText(file, "Shift_JIS");
+}
+
+function changeCategory(index, newCategory) {
+  records[index].category = newCategory;
+  localStorage.setItem("records", JSON.stringify(records));
+  updateDisplay();
 }
 
 updateDisplay();
