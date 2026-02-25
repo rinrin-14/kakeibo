@@ -205,8 +205,7 @@ li {
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 6px 12px;
   font-size: 12px;
 }
 
@@ -214,9 +213,6 @@ li {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f5f5f5;
-  padding: 4px 6px;
-  border-radius: 6px;
 }
 
 .legend-color {
@@ -236,13 +232,7 @@ li {
 #monthlyChartContainer {
   display: flex;
   width: 100%;
-}
-
-#monthlyYAxis {
-  width: 60px;
-  flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid #ddd;
+  height: 260px;
 }
 
 #monthlyChartScroll {
@@ -252,8 +242,118 @@ li {
 
 #monthlyChart {
   display: block;
+  height: 260px;
 }
 
+#monthlyYAxis {
+  width: 60px;
+  height: 260px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #ddd;
+}
+
+#bankChartContainer {
+  display: flex;
+  width: 100%;
+  height: 180px;
+}
+
+#bankChartScroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+#bankChartAxis {
+  width: 60px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #ddd;
+}
+
+#chartLegend {
+  font-size: 11px;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+/* =========================
+   全体デザイン統一（A）
+========================= */
+
+/* 見出しの余白統一 */
+h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+h3 {
+  font-size: 14px;
+  margin: 16px 0 6px;
+  color: #444;
+}
+
+/* ボタン統一 */
+button {
+  background: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* 入力系を少しカード風に */
+input, select {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+/* タブっぽくする */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tabs button {
+  flex: 1;
+  background: #e9edf2;
+  color: #333;
+  font-weight: 500;
+}
+
+.tabs button:hover {
+  background: #dde3ea;
+}
+
+/* サマリーの影を統一 */
+#summaryBox {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* レポートカードと統一 */
+.report-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* グラフ凡例の余白 */
+#chartLegend {
+  margin-top: 8px;
+}
+
+/* 月ナビを少し強調 */
+.month-nav span {
+  font-weight: bold;
+  font-size: 16px;
+}
 </style>
 
 </head>
@@ -324,7 +424,7 @@ li {
 
 </div>
 
-<button onclick="toggleForm()">＋追加</button>
+<button onclick="addRecord()" style="margin-bottom:16px;">追加</button>
 
 <div id="recordForm" style="display:none;">
 
@@ -361,9 +461,6 @@ li {
 <h3>CSV取り込み（三井住友）</h3>
 <input type="file" id="csvFile" accept=".csv">
 <button onclick="importCSV()">取り込み</button>
-
-<button onclick="showAll()">全て</button>
-<button onclick="showOthers()">その他だけ</button>
 <br><br>
 
 <h3>銀行CSV取り込み</h3>
@@ -382,34 +479,37 @@ li {
 
     <h3>銀行残高推移</h3>
     <div style="display:flex;">
-      <!-- Y軸（固定） -->
       <canvas id="bankChartAxis" width="60" height="180"></canvas>
 
-      <!-- 横スクロール部分 -->
       <div style="overflow-x:auto;">
-        <canvas id="bankChart" height="180"></canvas>
+        <canvas id="bankChart" height="180" style="min-width:600px;"></canvas>
       </div>
     </div>
 
+    <!-- 月次カテゴリグラフ -->
     <div id="monthlyChartContainer">
       <canvas id="monthlyYAxis" height="260"></canvas>
 
       <div id="monthlyChartScroll">
         <canvas id="monthlyChart" height="260"></canvas>
-      <div id="chartLegend"></div>
       </div>
     </div>
 
-  <div id="monthlyReport">
+    <div id="chartLegend"></div>
 
-    <h3>月別一覧</h3>
-    <div id="monthlyList"></div>
+    <!-- 月別テキストレポート -->
+    <div id="monthlyReport">
+      <h3>月別一覧</h3>
+      <div id="monthlyList"></div>
 
-    <h3>前月比較</h3>
-    <div id="monthCompare"></div>
+      <h3>前月比較</h3>
+      <div id="monthCompare"></div>
+    </div>
+
   </div>
 
 </div>
+
 
 <div id="chartTooltip" style="
   position: fixed;
@@ -440,15 +540,34 @@ const categoryRules = [
   // ===== 食費（スーパー・コンビニ）=====
   { keyword: "セブン", category: "食費" },
   { keyword: "ファミマ", category: "食費" },
+  { keyword: "ファミリーマート", category: "食費" },
   { keyword: "ローソン", category: "食費" },
   { keyword: "マルエツ", category: "食費" },
   { keyword: "ライフ", category: "食費" },
+  { keyword: "サミット", category: "食費" },
   { keyword: "ハナマサ", category: "食費" },
+  { keyword: "まいばすけっと", category: "食費" },
+  { keyword: "リコス", category: "食費" },
 
   // ===== 外食 =====
+  { keyword: "焼肉", category: "外食" },
+  { keyword: "天ぷら", category: "外食" },
   { keyword: "松屋", category: "外食" },
+  { keyword: "大戸屋", category: "外食" },
+  { keyword: "マクドナルド", category: "外食" },
+  { keyword: "UBERJP_EATS", category: "外食" },
+  { keyword: "スシロー", category: "外食" },
+  { keyword: "やよい軒", category: "外食" },
+  { keyword: "餃子の王将", category: "外食" },
+  { keyword: "キリンシティ", category: "外食" },
+  { keyword: "日高屋", category: "外食" },
+  { keyword: "すき家", category: "外食" },
+  { keyword: "吉野家", category: "外食" },
   { keyword: "鳥貴族", category: "外食" },
+  { keyword: "ボン花火", category: "外食" },
+  { keyword: "イエロ", category: "外食" },
   { keyword: "ドトール", category: "外食" },
+  { keyword: "プロント", category: "外食" },
   { keyword: "そば", category: "外食" },
   { keyword: "カフェ", category: "外食" },
   { keyword: "cafe", category: "外食" },
@@ -474,7 +593,11 @@ const categoryRules = [
   { keyword: "ＡＭＡＺＯＮ", category: "日用品" },
   { keyword: "楽天", category: "日用品" },
   { keyword: "無印", category: "日用品" },
+  { keyword: "ニトリ", category: "日用品" },
+  { keyword: "ダイソー", category: "日用品" },
   { keyword: "ワッツ", category: "日用品" },
+  { keyword: "セリア", category: "日用品" },
+  { keyword: "ハンズ", category: "日用品" },
   { keyword: "ドン・キホーテ", category: "日用品" },
   { keyword: "マツモトキヨシ", category: "日用品" },
   { keyword: "ドラッグ", category: "日用品" },
@@ -484,10 +607,14 @@ const categoryRules = [
   { keyword: "交通", category: "交通" },
   { keyword: "京成", category: "交通" },
   { keyword: "スカイライナー", category: "交通" },
+  { keyword: "ＧＯアプリ", category: "交通" },
   { keyword: "タクシー", category: "交通" },
   { keyword: "キャブ", category: "交通" },
+  { keyword: "カーシェア", category: "交通" },
   { keyword: "第一交通", category: "交通" },
   { keyword: "国際自動車", category: "交通" },
+  { keyword: "PASMO", category: "交通" },
+  { keyword: "ＰＡＳＭＯ", category: "交通" },
   { keyword: "ETC", category: "交通" },
   { keyword: "ＥＴＣ", category: "交通" },
   { keyword: "給油", category: "交通" },
@@ -521,15 +648,6 @@ const categoryColors = {
   "レジャー": "#E91E63",
   "その他": "#9E9E9E"
 };
-
-function detectCategory(shopName) {
-  for (let rule of categoryRules) {
-    if (shopName.includes(rule.keyword)) {
-      return rule.category;
-    }
-  }
-  return "その他";
-}
 
 // 表示中の年月
 let displayDate = new Date();
@@ -761,8 +879,6 @@ function updateDisplay() {
     balanceEl.textContent = getLatestBalance().toLocaleString();
   }
 
-  drawBankBalanceChart();
-
   updateBankUI();
   updateMonthTotalUI();
 }
@@ -772,7 +888,7 @@ function updateBankDisplay() {
 
   const balanceEl = document.getElementById("latestBankBalance");
   if (balanceEl) {
-    balanceEl.textContent = getLatestBalance().toLocaleString() + " 円";
+    balanceEl.textContent = (balance / 10000).toLocaleString() + "万円";
   }
 }
 
@@ -801,17 +917,6 @@ function updateMonthTotalUI() {
   });
 
   el.textContent = total.toLocaleString() + "円";
-}
-
-function showAll() {
-  filterCategory = "all";
-  updateDisplay();
-}
-
-
-function showOthers() {
-  filterCategory = "others";
-  updateDisplay();
 }
 
 function drawMonthlyChart(monthMap) {
@@ -852,10 +957,19 @@ function drawMonthlyChart(monthMap) {
 function drawMonthlyChartByCategory() {
 
   const chartCanvas = document.getElementById("monthlyChart");
-  const chartCtx = chartCanvas.getContext("2d");
-
   const yCanvas = document.getElementById("monthlyYAxis");
+
+  if (!chartCanvas || !yCanvas) return;
+
+  const chartCtx = chartCanvas.getContext("2d");
   const yCtx = yCanvas.getContext("2d");
+
+  const chartHeightPx = 260;
+
+  // ★高さ統一（先に取得してから設定）
+  chartCanvas.height = chartHeightPx;
+  yCanvas.height = chartHeightPx;
+  yCanvas.width = 60;
 
   const selectedCategories = getSelectedCategories();
   let hoverAreas = [];
@@ -876,9 +990,14 @@ function drawMonthlyChartByCategory() {
   const months = Object.keys(monthMap).sort((a,b)=> new Date(a) - new Date(b));
   if (months.length === 0) return;
 
-  const barWidth = 40;
-  const gap = 20;
-  const chartHeight = chartCanvas.height - 40;
+  const barWidth = 30;   // ← 少し細く
+  const gap = 25;
+  const sidePadding = 20;
+
+  const bottomPadding = 30;
+  const topPadding = 10;
+
+  const chartHeight = chartCanvas.height - bottomPadding - topPadding;
 
   const totals = months.map(m =>
     Object.values(monthMap[m]).reduce((a,b)=>a+b,0)
@@ -886,26 +1005,29 @@ function drawMonthlyChartByCategory() {
 
   const maxTotal = Math.max(...totals);
   const unit = 100000;
-  const maxAxis = Math.ceil(maxTotal / unit) * unit;
+  const maxAxis = Math.ceil(maxTotal / unit) * unit || unit;
 
-  // ====== 横スクロール用幅 ======
-  chartCanvas.width = months.length * (barWidth + gap);
+  // 横スクロール幅
+  chartCanvas.width =
+  months.length * (barWidth + gap) + sidePadding * 2;
 
   chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
   yCtx.clearRect(0, 0, yCanvas.width, yCanvas.height);
 
-  // ====== Y軸描画（固定側） ======
-  yCtx.strokeStyle = "#ddd";
+  // ===== Y軸 =====
   yCtx.fillStyle = "#666";
-  yCtx.font = "10px sans-serif";
+  yCtx.font = "11px sans-serif";
   yCtx.textAlign = "right";
+  yCtx.textBaseline = "middle";
 
   for (let v = 0; v <= maxAxis; v += unit) {
-    const y = yCanvas.height - 20 - (v / maxAxis) * chartHeight;
+    const y =
+      chartCanvas.height -
+      bottomPadding -
+      (v / maxAxis) * chartHeight;
 
-    yCtx.fillText((v/10000) + "万円", 55, y + 3);
+    yCtx.fillText((v/10000) + "万円", 55, y);
 
-    // 横線はグラフ側にも引く
     chartCtx.beginPath();
     chartCtx.moveTo(0, y);
     chartCtx.lineTo(chartCanvas.width, y);
@@ -913,18 +1035,23 @@ function drawMonthlyChartByCategory() {
     chartCtx.stroke();
   }
 
-  // ====== 棒描画 ======
+  // ===== 棒描画 =====
   months.forEach((month, i) => {
 
     let stackedHeight = 0;
-    const x = i * (barWidth + gap);
+    const x = sidePadding + i * (barWidth + gap);
 
     categories.forEach(cat => {
+
       const value = (monthMap[month][cat] || 0);
       if (!value) return;
 
       const height = (value / maxAxis) * chartHeight;
-      const y = chartCanvas.height - stackedHeight - height - 20;
+      const y =
+        chartCanvas.height -
+        bottomPadding -
+        stackedHeight -
+        height;
 
       chartCtx.fillStyle = categoryColors[cat];
       chartCtx.fillRect(x, y, barWidth, height);
@@ -952,7 +1079,7 @@ function drawMonthlyChartByCategory() {
     );
   });
 
-  // ====== ホバー ======
+  // ===== ホバー =====
   const tooltip = document.getElementById("chartTooltip");
 
   chartCanvas.onmousemove = function(e) {
@@ -987,6 +1114,14 @@ function drawMonthlyChartByCategory() {
   chartCanvas.onmouseleave = function() {
     tooltip.style.display = "none";
   };
+
+  drawLegend();
+
+  // ===== 最新月へ自動スクロール =====
+  const scrollArea = document.getElementById("monthlyChartScroll");
+  if (scrollArea) {
+    scrollArea.scrollLeft = scrollArea.scrollWidth;
+  }
 }
 
 
@@ -1013,6 +1148,7 @@ function drawLegend() {
     `;
   });
 }
+
 
 function getLatestBalance() {
   return Number(localStorage.getItem("latestBankBalance")) || 0;
