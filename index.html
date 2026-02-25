@@ -277,6 +277,30 @@ li {
   line-height: 1.6;
 }
 
+.balance-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  margin-bottom: 16px;
+}
+
+.balance-title {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.balance-amount {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.balance-change {
+  font-size: 14px;
+}
+
 /* =========================
    全体デザイン統一（A）
 ========================= */
@@ -316,7 +340,7 @@ input, select {
 /* タブっぽくする */
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
@@ -324,7 +348,14 @@ input, select {
   flex: 1;
   background: #e9edf2;
   color: #333;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.tabs button.active {
+  background: #4A90E2;
+  color: #fff;
+  font-weight: bold;
 }
 
 .tabs button:hover {
@@ -362,11 +393,12 @@ input, select {
 <div class="container">
 
 <div class="tabs">
-  <button onclick="showPage('main')">記録</button>
-  <button onclick="showPage('report')">月次レポート</button>
+  <button onclick="showPage('expense')">支出記録</button>
+  <button onclick="showPage('account')">口座記録</button>
+  <button onclick="showPage('report')">レポート</button>
 </div>
 
-<div id="mainPage">
+<div id="expensePage">
 
 <h2>支出記録</h2>
 
@@ -463,12 +495,32 @@ input, select {
 <button onclick="importCSV()">取り込み</button>
 <br><br>
 
-<h3>銀行CSV取り込み</h3>
-<input type="file" id="bankCsvFile" accept=".csv">
-<button onclick="importBankCSV()">銀行取り込み</button>
+<button onclick="clearBankRecords()" style="background:#e53935;">
+  銀行明細を全削除
+</button>
 
 <h3>記録一覧</h3>
 <ul id="list"></ul>
+
+</div>
+
+<div id="accountPage" style="display:none;">
+
+  <h2>口座記録</h2>
+
+  <h3>銀行CSV取込</h3>
+  <input type="file" id="bankCsvFile" accept=".csv">
+  <button onclick="importBankCSV()">取り込む</button>
+
+  <h3>現在の残高</h3>
+  <div class="balance-card">
+    <div class="balance-title">現在の残高</div>
+    <div id="bankBalanceDisplay" class="balance-amount"></div>
+    <div id="bankMonthlyChange" class="balance-change"></div>
+  </div>
+
+  <h3>銀行明細（最新20件）</h3>
+  <div id="bankList" class="bank-list"></div>
 
 </div>
 
@@ -669,24 +721,52 @@ const categories = [
 // =======================
 window.onload = function () {
   updateDisplay();
+  showPage("expense");
 };
 
 function showPage(page) {
-  document.getElementById("mainPage").style.display = "none";
-  document.getElementById("reportPage").style.display = "none";
 
-  if (page === "main") {
-    document.getElementById("mainPage").style.display = "block";
-  } else {
-    document.getElementById("reportPage").style.display = "block";
+  const expense = document.getElementById("expensePage");
+  const account = document.getElementById("accountPage");
+  const report = document.getElementById("reportPage");
+
+  // 全部非表示
+  if (expense) expense.style.display = "none";
+  if (account) account.style.display = "none";
+  if (report) report.style.display = "none";
+
+  // 表示切り替え
+  if (page === "expense" && expense) {
+    expense.style.display = "block";
+    updateDisplay();
+  }
+
+  if (page === "account" && account) {
+    account.style.display = "block";
+    drawBankList();   // ←銀行一覧表示
+  }
+
+  if (page === "report" && report) {
+    report.style.display = "block";
     updateMonthlyReport();
+    drawMonthlyChartByCategory();
+    drawBankBalanceChart();
+  }
+  // タブのアクティブ状態更新
+  document.querySelectorAll(".tabs button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  if (page === "expense") {
+    document.querySelector('.tabs button[onclick="showPage(\'expense\')"]').classList.add("active");
+  }
+  if (page === "account") {
+    document.querySelector('.tabs button[onclick="showPage(\'account\')"]').classList.add("active");
   }
   if (page === "report") {
-    drawMonthlyChartByCategory();
-    drawBankBalanceChart();   // ←銀行グラフ
+    document.querySelector('.tabs button[onclick="showPage(\'report\')"]').classList.add("active");
   }
 }
-
 
 function updateMonthlyReport() {
   const reportDiv = document.getElementById("monthlyReport");
@@ -1053,8 +1133,13 @@ function drawMonthlyChartByCategory() {
         stackedHeight -
         height;
 
+      const isLatestMonth = (i === months.length - 1);
+      chartCtx.globalAlpha = isLatestMonth ? 1 : 0.7;
+
       chartCtx.fillStyle = categoryColors[cat];
       chartCtx.fillRect(x, y, barWidth, height);
+
+      chartCtx.globalAlpha = isLatestMonth ? 1 : 0.5;
 
       hoverAreas.push({
         month,
@@ -1326,6 +1411,110 @@ function drawBankBalanceChart() {
   };
 }
 
+// =======================
+// 銀行明細リスト表示（口座記録タブ用）
+// =======================
+function drawBankList() {
+
+  const listEl = document.getElementById("bankList");
+  const balanceEl = document.getElementById("bankBalanceDisplay");
+
+  const changeEl = document.getElementById("bankMonthlyChange");
+
+  if (balanceEl) {
+    balanceEl.textContent =
+      getLatestBalance().toLocaleString() + " 円";
+  }
+
+  if (changeEl) {
+    const change = getThisMonthBankChange();
+    const sign = change >= 0 ? "+" : "";
+    const color = change >= 0 ? "#4CAF50" : "#E53935";
+
+    changeEl.textContent = `今月の増減 ${sign}${change.toLocaleString()}円`;
+    changeEl.style.color = color;
+  }
+
+  if (!listEl) return;
+
+  // 残高表示
+  if (balanceEl) {
+    balanceEl.textContent =
+      getLatestBalance().toLocaleString() + " 円";
+  }
+
+  if (!bankRecords || bankRecords.length === 0) {
+    listEl.innerHTML = "銀行データがありません";
+    return;
+  }
+
+  // 新しい順に並び替え
+  const sorted = [...bankRecords].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
+  );
+
+  // 最新20件だけ表示
+  const recent = sorted.slice(0, 20);
+
+  listEl.innerHTML = "";
+
+  recent.forEach(r => {
+
+    const amountColor = r.amount >= 0 ? "#4CAF50" : "#E53935";
+
+    listEl.innerHTML += `
+      <div class="bank-item" style="
+        display:flex;
+        justify-content:space-between;
+        border-bottom:1px solid #eee;
+        padding:6px 0;
+        font-size:12px;
+      ">
+        <div>
+          <div>${r.date}</div>
+          <div style="color:#666;">${r.description}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:${amountColor};">
+            ${r.amount.toLocaleString()}円
+          </div>
+          <div style="color:#999; font-size:11px;">
+            残高 ${r.balance.toLocaleString()}円
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function getThisMonthBankChange() {
+  if (!bankRecords || bankRecords.length === 0) return 0;
+
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+
+  const thisMonthRecords = bankRecords.filter(r => {
+    const d = new Date(r.date);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  });
+
+  return thisMonthRecords.reduce((sum, r) => sum + r.amount, 0);
+}
+
+function clearBankRecords() {
+  if (!confirm("銀行明細をすべて削除します。よろしいですか？")) return;
+
+  bankRecords = [];
+  localStorage.removeItem("bankRecords");
+  localStorage.removeItem("latestBankBalance");
+
+  drawBankList();
+  drawBankBalanceChart();
+
+  alert("銀行明細を削除しました");
+}
+
 function addRecord() {
   const date = document.getElementById("date").value;
   const amount = Number(document.getElementById("amount").value);
@@ -1542,6 +1731,7 @@ function importBankCSV() {
 
     updateBankDisplay();
     drawBankBalanceChart();
+    drawBankList();
   };
 
   reader.readAsText(file, "Shift_JIS");
