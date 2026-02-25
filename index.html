@@ -65,6 +65,56 @@ button:hover {
   color: #000;
 }
 
+#reportPage {
+  padding: 12px;
+}
+
+#chartTooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, -120%);
+  z-index: 10;
+}
+
+.dashboard {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card {
+  flex: 1;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.card-title {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.card-value {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.report-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 12px;
+}
+
 .filter-panel {
   border: 1px solid #ccc;
   padding: 10px;
@@ -152,6 +202,58 @@ li {
   color: #888;
 }
 
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f5f5f5;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.chart-scroll {
+  overflow-x: auto;
+}
+
+.chart-scroll canvas {
+  min-width: 600px;
+}
+
+#monthlyChartContainer {
+  display: flex;
+  width: 100%;
+}
+
+#monthlyYAxis {
+  width: 60px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #ddd;
+}
+
+#monthlyChartScroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+#monthlyChart {
+  display: block;
+}
+
 </style>
 
 </head>
@@ -193,6 +295,18 @@ li {
 
 <h3>今月サマリー</h3>
 
+<div id="dashboard" class="dashboard">
+  <div class="card">
+    <div class="card-title">銀行残高</div>
+    <div class="card-value" id="bankBalance">0円</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">今月支出</div>
+    <div class="card-value" id="monthTotal">0円</div>
+  </div>
+</div>
+
 <div id="summaryBox">
 
   <div id="bigTotal">
@@ -209,6 +323,10 @@ li {
   <div id="categoryTotals"></div>
 
 </div>
+
+<button onclick="toggleForm()">＋追加</button>
+
+<div id="recordForm" style="display:none;">
 
 日付: <input type="date" id="date"><br><br>
 金額: <input type="number" id="amount"><br><br>
@@ -236,6 +354,7 @@ li {
 <br><br>
 
 メモ: <input type="text" id="memo"><br><br>
+</div>
 
 <button onclick="addRecord()">追加</button>
 
@@ -247,23 +366,63 @@ li {
 <button onclick="showOthers()">その他だけ</button>
 <br><br>
 
+<h3>銀行CSV取り込み</h3>
+<input type="file" id="bankCsvFile" accept=".csv">
+<button onclick="importBankCSV()">銀行取り込み</button>
+
 <h3>記録一覧</h3>
 <ul id="list"></ul>
 
 </div>
 
 <div id="reportPage" style="display:none;">
-  <h2>月次レポート</h2>
 
-  <div id="monthCompare"></div>
-  <hr>
+  <div class="report-card">
+    <h2>月次レポート</h2>
 
-  <h3>月次推移</h3>
-  <canvas id="monthlyChart" height="200"></canvas>
+    <h3>銀行残高推移</h3>
+    <div style="display:flex;">
+      <!-- Y軸（固定） -->
+      <canvas id="bankChartAxis" width="60" height="180"></canvas>
 
-  <hr>
-  <div id="monthlyList"></div>
+      <!-- 横スクロール部分 -->
+      <div style="overflow-x:auto;">
+        <canvas id="bankChart" height="180"></canvas>
+      </div>
+    </div>
+
+    <div id="monthlyChartContainer">
+      <canvas id="monthlyYAxis" height="260"></canvas>
+
+      <div id="monthlyChartScroll">
+        <canvas id="monthlyChart" height="260"></canvas>
+      <div id="chartLegend"></div>
+      </div>
+    </div>
+
+  <div id="monthlyReport">
+
+    <h3>月別一覧</h3>
+    <div id="monthlyList"></div>
+
+    <h3>前月比較</h3>
+    <div id="monthCompare"></div>
+  </div>
+
 </div>
+
+<div id="chartTooltip" style="
+  position: fixed;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  z-index: 9999;
+"></div>
+
 
 
 <script>
@@ -272,6 +431,9 @@ li {
 // 初期データ読み込み
 // =======================
 let records = JSON.parse(localStorage.getItem("records")) || [];
+
+// ===== 銀行データ（追加）=====
+let bankRecords = JSON.parse(localStorage.getItem("bankRecords")) || [];
 
 const categoryRules = [
 
@@ -350,6 +512,16 @@ const categoryRules = [
   { keyword: "楽天ペイ", category: "その他" }
 ];
 
+const categoryColors = {
+  "食費": "#4CAF50",
+  "外食": "#FF9800",
+  "日用品": "#2196F3",
+  "交通": "#9C27B0",
+  "固定費": "#607D8B",
+  "レジャー": "#E91E63",
+  "その他": "#9E9E9E"
+};
+
 function detectCategory(shopName) {
   for (let rule of categoryRules) {
     if (shopName.includes(rule.keyword)) {
@@ -391,9 +563,16 @@ function showPage(page) {
     document.getElementById("reportPage").style.display = "block";
     updateMonthlyReport();
   }
+  if (page === "report") {
+    drawMonthlyChartByCategory();
+    drawBankBalanceChart();   // ←銀行グラフ
+  }
 }
 
+
 function updateMonthlyReport() {
+  const reportDiv = document.getElementById("monthlyReport");
+  if (!reportDiv) return; // 要素なければ何もしない
 
   let monthMap = {};
 
@@ -403,7 +582,7 @@ function updateMonthlyReport() {
     monthMap[key] = (monthMap[key] || 0) + Number(r.amount);
   });
 
-  drawMonthlyChart(monthMap);
+  drawMonthlyChartByCategory();
 
   const sortedMonths = Object.keys(monthMap).sort((a,b)=>{
     return new Date(a) - new Date(b);
@@ -435,8 +614,9 @@ function updateMonthlyReport() {
   } else {
     compareDiv.innerHTML = "データがまだ少ないです";
   }
-}
 
+  drawLegend();
+}
 
 function detectCategory(shopName) {
   if (!shopName) return "その他";
@@ -573,12 +753,61 @@ function updateDisplay() {
 
   const total = myCard + familyCard + cash;
   document.getElementById("totalAmount").textContent = total.toLocaleString();
+
+  updateMonthlyReport();
+
+  const balanceEl = document.getElementById("bankBalance");
+  if (balanceEl) {
+    balanceEl.textContent = getLatestBalance().toLocaleString();
+  }
+
+  drawBankBalanceChart();
+
+  updateBankUI();
+  updateMonthTotalUI();
+}
+
+function updateBankDisplay() {
+  drawBankBalanceChart();
+
+  const balanceEl = document.getElementById("latestBankBalance");
+  if (balanceEl) {
+    balanceEl.textContent = getLatestBalance().toLocaleString() + " 円";
+  }
+}
+
+function updateBankUI() {
+  const el = document.getElementById("bankBalance");
+  if (!el) return;
+
+  const balance = getLatestBalance();
+  el.textContent = balance.toLocaleString() + "円";
+}
+
+function updateMonthTotalUI() {
+  const el = document.getElementById("monthTotal");
+  if (!el) return;
+
+  let total = 0;
+
+  records.forEach(r => {
+    const d = new Date(r.date);
+    if (
+      d.getFullYear() === displayDate.getFullYear() &&
+      d.getMonth() === displayDate.getMonth()
+    ) {
+      total += Number(r.amount);
+    }
+  });
+
+  el.textContent = total.toLocaleString() + "円";
 }
 
 function showAll() {
   filterCategory = "all";
   updateDisplay();
 }
+
 
 function showOthers() {
   filterCategory = "others";
@@ -618,6 +847,347 @@ function drawMonthlyChart(monthMap) {
     ctx.textAlign = "center";
     ctx.fillText(month.split("-")[1] + "月", x + (barWidth - 20)/2, canvas.height - 5);
   });
+}
+
+function drawMonthlyChartByCategory() {
+
+  const chartCanvas = document.getElementById("monthlyChart");
+  const chartCtx = chartCanvas.getContext("2d");
+
+  const yCanvas = document.getElementById("monthlyYAxis");
+  const yCtx = yCanvas.getContext("2d");
+
+  const selectedCategories = getSelectedCategories();
+  let hoverAreas = [];
+  let monthMap = {};
+
+  records.forEach(r => {
+    const d = new Date(r.date);
+    const key = d.getFullYear() + "-" + (d.getMonth() + 1);
+    const category = r.category || "その他";
+
+    if (!selectedCategories.includes(category)) return;
+
+    if (!monthMap[key]) monthMap[key] = {};
+    monthMap[key][category] =
+      (monthMap[key][category] || 0) + Number(r.amount);
+  });
+
+  const months = Object.keys(monthMap).sort((a,b)=> new Date(a) - new Date(b));
+  if (months.length === 0) return;
+
+  const barWidth = 40;
+  const gap = 20;
+  const chartHeight = chartCanvas.height - 40;
+
+  const totals = months.map(m =>
+    Object.values(monthMap[m]).reduce((a,b)=>a+b,0)
+  );
+
+  const maxTotal = Math.max(...totals);
+  const unit = 100000;
+  const maxAxis = Math.ceil(maxTotal / unit) * unit;
+
+  // ====== 横スクロール用幅 ======
+  chartCanvas.width = months.length * (barWidth + gap);
+
+  chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+  yCtx.clearRect(0, 0, yCanvas.width, yCanvas.height);
+
+  // ====== Y軸描画（固定側） ======
+  yCtx.strokeStyle = "#ddd";
+  yCtx.fillStyle = "#666";
+  yCtx.font = "10px sans-serif";
+  yCtx.textAlign = "right";
+
+  for (let v = 0; v <= maxAxis; v += unit) {
+    const y = yCanvas.height - 20 - (v / maxAxis) * chartHeight;
+
+    yCtx.fillText((v/10000) + "万円", 55, y + 3);
+
+    // 横線はグラフ側にも引く
+    chartCtx.beginPath();
+    chartCtx.moveTo(0, y);
+    chartCtx.lineTo(chartCanvas.width, y);
+    chartCtx.strokeStyle = "#eee";
+    chartCtx.stroke();
+  }
+
+  // ====== 棒描画 ======
+  months.forEach((month, i) => {
+
+    let stackedHeight = 0;
+    const x = i * (barWidth + gap);
+
+    categories.forEach(cat => {
+      const value = (monthMap[month][cat] || 0);
+      if (!value) return;
+
+      const height = (value / maxAxis) * chartHeight;
+      const y = chartCanvas.height - stackedHeight - height - 20;
+
+      chartCtx.fillStyle = categoryColors[cat];
+      chartCtx.fillRect(x, y, barWidth, height);
+
+      hoverAreas.push({
+        month,
+        category: cat,
+        value,
+        x,
+        y,
+        width: barWidth,
+        height
+      });
+
+      stackedHeight += height;
+    });
+
+    chartCtx.fillStyle = "#333";
+    chartCtx.font = "10px sans-serif";
+    chartCtx.textAlign = "center";
+    chartCtx.fillText(
+      month.split("-")[1] + "月",
+      x + barWidth/2,
+      chartCanvas.height - 5
+    );
+  });
+
+  // ====== ホバー ======
+  const tooltip = document.getElementById("chartTooltip");
+
+  chartCanvas.onmousemove = function(e) {
+    const rect = chartCanvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    let found = null;
+
+    hoverAreas.forEach(area => {
+      if (
+        mouseX >= area.x &&
+        mouseX <= area.x + area.width &&
+        mouseY >= area.y &&
+        mouseY <= area.y + area.height
+      ) {
+        found = area;
+      }
+    });
+
+    if (found) {
+      tooltip.style.display = "block";
+      tooltip.style.left = e.pageX + "px";
+      tooltip.style.top = e.pageY + "px";
+      tooltip.innerHTML =
+        `${found.month}<br>${found.category}：${found.value.toLocaleString()}円`;
+    } else {
+      tooltip.style.display = "none";
+    }
+  };
+
+  chartCanvas.onmouseleave = function() {
+    tooltip.style.display = "none";
+  };
+}
+
+
+function drawLegend() {
+  const legend = document.getElementById("chartLegend");
+  legend.innerHTML = "";
+
+  const selectedCategories = getSelectedCategories();
+
+  selectedCategories.forEach(cat => {
+    const color = categoryColors[cat];
+
+    legend.innerHTML += `
+      <span style="display:inline-block; margin-right:10px;">
+        <span style="
+          display:inline-block;
+          width:10px;
+          height:10px;
+          background:${color};
+          margin-right:4px;
+        "></span>
+        ${cat}
+      </span>
+    `;
+  });
+}
+
+function getLatestBalance() {
+  return Number(localStorage.getItem("latestBankBalance")) || 0;
+}
+
+function drawBankBalanceChart() {
+  const canvas = document.getElementById("bankChart");
+  const axisCanvas = document.getElementById("bankChartAxis");
+
+  if (!canvas || !axisCanvas) return;
+  if (!bankRecords || bankRecords.length === 0) return;
+
+  const ctx = canvas.getContext("2d");
+  const axisCtx = axisCanvas.getContext("2d");
+
+  // =====================
+  // 月末残高
+  // =====================
+  let monthEndMap = {};
+
+  bankRecords.forEach(r => {
+    const d = new Date(r.date);
+    const key = d.getFullYear() + "-" + (d.getMonth() + 1);
+
+    if (
+      !monthEndMap[key] ||
+      new Date(r.date) > new Date(monthEndMap[key].date)
+    ) {
+      monthEndMap[key] = r;
+    }
+  });
+
+  const months = Object.keys(monthEndMap).sort(
+    (a, b) => new Date(a) - new Date(b)
+  );
+  if (months.length === 0) return;
+
+  // 横幅（スクロール用）
+  canvas.width = Math.max(months.length * 80, 600);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  axisCtx.clearRect(0, 0, axisCanvas.width, axisCanvas.height);
+
+  const balances = months.map(m => monthEndMap[m].balance);
+
+  const max = Math.max(...balances);
+  const min = Math.min(...balances);
+
+  // ★10万円単位に丸める
+  const unit = 100000;
+  const displayMax = Math.ceil(max / unit) * unit;
+  const displayMin = Math.floor(min / unit) * unit;
+  const range = displayMax - displayMin || unit;
+
+  const padding = 20;
+  const chartHeight = canvas.height - padding * 2;
+  const stepX =
+    months.length > 1
+      ? (canvas.width - padding * 2) / (months.length - 1)
+      : 0;
+
+  // =====================
+  // Y軸（固定canvasに描画）
+  // =====================
+  axisCtx.strokeStyle = "#eee";
+  axisCtx.fillStyle = "#666";
+  axisCtx.font = "10px sans-serif";
+  axisCtx.textAlign = "right";
+
+  const steps = range / unit;
+
+  for (let i = 0; i <= steps; i++) {
+    const value = displayMin + unit * i;
+
+    const y =
+      axisCanvas.height -
+      padding -
+      ((value - displayMin) / range) * chartHeight;
+
+    // グリッド線（グラフ側）
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.strokeStyle = "#f0f0f0";
+    ctx.stroke();
+
+    // ラベル（軸側）
+    axisCtx.fillText(
+      Math.round(value / 10000) + "万円",
+      axisCanvas.width - 5,
+      y + 3
+    );
+  }
+
+  // =====================
+  // 折れ線
+  // =====================
+  ctx.strokeStyle = "#4A90E2";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  let points = [];
+
+  months.forEach((month, i) => {
+    const balance = monthEndMap[month].balance;
+
+    const x = padding + i * stepX;
+    const y =
+      canvas.height -
+      padding -
+      ((balance - displayMin) / range) * chartHeight;
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+
+    points.push({ x, y, month, balance });
+  });
+
+  ctx.stroke();
+
+  // 点
+  ctx.fillStyle = "#4A90E2";
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 月ラベル
+  ctx.fillStyle = "#333";
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "center";
+
+  months.forEach((month, i) => {
+    const x = padding + i * stepX;
+    const m = month.split("-")[1];
+    ctx.fillText(m + "月", x, canvas.height - 5);
+  });
+
+  // =====================
+  // ホバー
+  // =====================
+  const tooltip = document.getElementById("chartTooltip");
+  if (!tooltip) return;
+
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    let found = null;
+
+    points.forEach(p => {
+      const dx = mouseX - p.x;
+      const dy = mouseY - p.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 10) {
+        found = p;
+      }
+    });
+
+    if (found) {
+      tooltip.style.display = "block";
+      tooltip.style.left = e.clientX + 10 + "px";
+      tooltip.style.top = e.clientY - 20 + "px";
+
+      const [y, m] = found.month.split("-");
+      tooltip.innerHTML =
+        `${y}年${m}月<br><strong>${found.balance.toLocaleString()}円</strong>`;
+    } else {
+      tooltip.style.display = "none";
+    }
+  };
+
+  canvas.onmouseleave = function() {
+    tooltip.style.display = "none";
+  };
 }
 
 function addRecord() {
@@ -747,13 +1317,116 @@ function importCSV() {
   reader.readAsText(file, "Shift_JIS");
 }
 
+// 数値変換関数
+function parseNumber(str) {
+  if (!str) return 0;
+
+  return Number(
+    String(str)
+      .replace(/,/g, "")
+      .replace(/[^\d\-]/g, "") // 数字とマイナス以外全部削除
+  ) || 0;
+}
+
+// =======================
+// 銀行CSV取り込み
+// =======================
+function importBankCSV() {
+
+  const fileInput = document.getElementById("bankCsvFile");
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("CSVファイルを選択してください");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const lines = text.split("\n");
+
+    let added = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+
+      let line = lines[i].trim();
+      if (!line) continue;
+
+      // ===== ダブルクォート除去 =====
+      const cols = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+      if (!cols) continue;
+
+      if (i === 1) console.log(cols);
+
+      // 先頭と末尾の " を除去
+      for (let j = 0; j < cols.length; j++) {
+        cols[j] = cols[j].replace(/^"|"$/g, "");
+      }
+      if (cols.length < 5) continue;
+
+      const dateStr = cols[0];
+      const description = cols[1];
+      const outAmount = parseNumber(cols[2]);
+      const inAmount = parseNumber(cols[3]);
+      const balance = parseNumber(cols[4]);
+
+      // 日付整形
+      const formattedDate = dateStr.replace(/\//g, "-");
+
+      const amount = inAmount > 0 ? inAmount : -outAmount;
+
+      // 重複チェック（重要）
+      const isDuplicate = bankRecords.some(r =>
+        r.date === formattedDate &&
+        r.amount === amount &&
+        r.balance === balance &&
+        r.description === description
+      );
+
+      if (isDuplicate) continue;
+
+      bankRecords.push({
+        date: formattedDate,
+        description: description,
+        amount: amount,
+        balance: balance
+      });
+
+      if (i === 1) {
+        localStorage.setItem("latestBankBalance", balance);
+      }
+
+      added++;
+    }
+
+    localStorage.setItem("bankRecords", JSON.stringify(bankRecords));
+
+    alert(added + "件取り込みました");
+
+    updateBankDisplay();
+    drawBankBalanceChart();
+  };
+
+  reader.readAsText(file, "Shift_JIS");
+}
+
 function changeCategory(index, newCategory) {
   records[index].category = newCategory;
   localStorage.setItem("records", JSON.stringify(records));
   updateDisplay();
 }
 
-updateDisplay();
+function toggleForm() {
+  const form = document.getElementById("recordForm");
+
+  if (form.style.display === "none") {
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
+}
+
 
 </script>
 </div>
