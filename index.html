@@ -478,154 +478,119 @@ padding: 8px 4px;
 <body>
 <div class="container">
 
-<div id="expensePage">
+  <div id="expensePage">
 
-<h2>支出記録</h2>
+    <h2>支出記録</h2>
 
-<div class="month-nav">
-  <button onclick="prevMonth()">＜</button>
-  <span id="monthLabel"></span>
-  <button onclick="nextMonth()">＞</button>
-</div>
+    <div class="month-nav">
+      <button onclick="prevMonth()">＜</button>
+      <span id="monthLabel"></span>
+      <button onclick="nextMonth()">＞</button>
+    </div>
 
-<h3>カテゴリフィルター</h3>
-<button onclick="toggleFilter()">フィルター</button>
+    <h3>カテゴリフィルター</h3>
+    <button onclick="toggleFilter()">フィルター</button>
 
-<div id="filterPanel" style="display:none;">
+    <div id="filterPanel" style="display:none;">
 
-  <!-- ボタン専用エリア -->
-  <div class="filter-actions">
-    <button onclick="selectAllCategories()">全選択</button>
-    <button onclick="clearAllCategories()">全解除</button>
+      <!-- ボタン専用エリア -->
+      <div class="filter-actions">
+        <button onclick="selectAllCategories()">全選択</button>
+        <button onclick="clearAllCategories()">全解除</button>
+      </div>
+
+      <!-- カテゴリ一覧（今まで通りlabelでOK） -->
+      <label>
+        <span>食費</span>
+        <input type="checkbox" value="食費" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>外食</span>
+        <input type="checkbox" value="外食" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>日用品</span>
+        <input type="checkbox" value="日用品" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>交通</span>
+        <input type="checkbox" value="交通" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>固定費</span>
+        <input type="checkbox" value="固定費" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>レジャー</span>
+        <input type="checkbox" value="レジャー" checked onchange="updateDisplay()">
+      </label>
+
+      <label>
+        <span>その他</span>
+        <input type="checkbox" value="その他" checked onchange="updateDisplay()">
+      </label>
+
+    </div>
+
+    <h3>今月サマリー</h3>
+
+    <div id="dashboard" class="dashboard">
+      <div class="card">
+      <div class="card-title">銀行残高</div>
+      <div class="card-value" id="bankBalance">0円</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今月支出</div>
+      <div class="card-value" id="monthTotal">0円</div>
+    </div>
   </div>
 
-  <!-- カテゴリ一覧（今まで通りlabelでOK） -->
-  <label>
-    <span>食費</span>
-    <input type="checkbox" value="食費" checked onchange="updateDisplay()">
-  </label>
+  <div id="summaryBox">
 
-  <label>
-    <span>外食</span>
-    <input type="checkbox" value="外食" checked onchange="updateDisplay()">
-  </label>
+    <div id="bigTotal">
+      今月合計<br>
+      <span id="totalAmount">0</span> 円
+    </div>
 
-  <label>
-    <span>日用品</span>
-    <input type="checkbox" value="日用品" checked onchange="updateDisplay()">
-  </label>
+    <hr>
 
-  <label>
-    <span>交通</span>
-    <input type="checkbox" value="交通" checked onchange="updateDisplay()">
-  </label>
+    自分カード：<span id="myCardTotal">0</span>円<br>
+    家族カード：<span id="familyCardTotal">0</span>円<br>
+    現金：<span id="cashTotal">0</span>円<br><br>
 
-  <label>
-    <span>固定費</span>
-    <input type="checkbox" value="固定費" checked onchange="updateDisplay()">
-  </label>
+    <div id="categoryTotals"></div>
 
-  <label>
-    <span>レジャー</span>
-    <input type="checkbox" value="レジャー" checked onchange="updateDisplay()">
-  </label>
-
-  <label>
-    <span>その他</span>
-    <input type="checkbox" value="その他" checked onchange="updateDisplay()">
-  </label>
-
-</div>
-
-<h3>今月サマリー</h3>
-
-<div id="dashboard" class="dashboard">
-  <div class="card">
-    <div class="card-title">銀行残高</div>
-    <div class="card-value" id="bankBalance">0円</div>
   </div>
 
-  <div class="card">
-    <div class="card-title">今月支出</div>
-    <div class="card-value" id="monthTotal">0円</div>
+  <div class="sort-box">
+    並び替え：
+    <select id="sortDate" onchange="updateDisplay()">
+      <option value="desc">日付：新しい順</option>
+      <option value="asc">日付：古い順</option>
+    </select>
+
+    <select id="sortAmount" onchange="updateDisplay()">
+      <option value="none">金額：指定なし</option>
+      <option value="desc">高い順</option>
+      <option value="asc">低い順</option>
+    </select>
+
+    <select id="sortCategory" onchange="updateDisplay()">
+      <option value="none">カテゴリ：指定なし</option>
+      <option value="asc">A→Z</option>
+    </select>
   </div>
-</div>
 
-<div id="summaryBox">
+  <h3>記録一覧</h3>
+  <ul id="list"></ul>
 
-  <div id="bigTotal">
-    今月合計<br>
-    <span id="totalAmount">0</span> 円
   </div>
-
-  <hr>
-
-  自分カード：<span id="myCardTotal">0</span>円<br>
-  家族カード：<span id="familyCardTotal">0</span>円<br>
-  現金：<span id="cashTotal">0</span>円<br><br>
-
-  <div id="categoryTotals"></div>
-
-</div>
-
-<button onclick="toggleForm()" style="margin-bottom:16px;">追加</button>
-
-<div id="recordForm" style="display:none;">
-
-日付: <input type="date" id="date"><br><br>
-金額: <input type="number" id="amount"><br><br>
-
-支払い方法:
-<select id="account">
-  <option value="自分カード">自分カード</option>
-  <option value="家族カード">家族カード</option>
-  <option value="現金">現金</option>
-</select>
-<br><br>
-
-店名: <input type="text" id="shop"><br><br>
-
-カテゴリ:
-<select id="category">
-  <option value="食費">食費</option>
-  <option value="外食">外食</option>
-  <option value="日用品">日用品</option>
-  <option value="交通">交通</option>
-  <option value="固定費">固定費</option>
-  <option value="レジャー">レジャー</option>
-  <option value="その他">その他</option>
-</select>
-<br><br>
-
-メモ: <input type="text" id="memo"><br><br>
-
-<button onclick="addRecord()">保存</button>
-
-</div>
-
-<div class="sort-box">
-  並び替え：
-  <select id="sortDate" onchange="updateDisplay()">
-    <option value="desc">日付：新しい順</option>
-    <option value="asc">日付：古い順</option>
-  </select>
-
-  <select id="sortAmount" onchange="updateDisplay()">
-    <option value="none">金額：指定なし</option>
-    <option value="desc">高い順</option>
-    <option value="asc">低い順</option>
-  </select>
-
-  <select id="sortCategory" onchange="updateDisplay()">
-    <option value="none">カテゴリ：指定なし</option>
-    <option value="asc">A→Z</option>
-  </select>
-</div>
-
-<h3>記録一覧</h3>
-<ul id="list"></ul>
-
-</div>
 
 <div id="accountPage" style="display:none;">
 
@@ -696,6 +661,46 @@ padding: 8px 4px;
     <input type="file" id="bankCsvFile" accept=".csv">
     <button onclick="importBankCSV()">CSV取込</button>
   </div>
+
+  <button onclick="toggleForm()" style="margin-bottom:16px;">明細追加</button>
+
+  <div id="recordForm" style="display:none;">
+
+  <div class="card">
+
+  日付: <input type="date" id="date"><br><br>
+  金額: <input type="number" id="amount"><br><br>
+
+  支払い方法:
+  <select id="account">
+    <option value="自分カード">自分カード</option>
+    <option value="家族カード">家族カード</option>
+    <option value="現金">現金</option>
+  </select>
+  <br><br>
+
+  店名: <input type="text" id="shop"><br><br>
+
+  カテゴリ:
+  <select id="category">
+    <option value="食費">食費</option>
+    <option value="外食">外食</option>
+    <option value="日用品">日用品</option>
+    <option value="交通">交通</option>
+    <option value="固定費">固定費</option>
+    <option value="レジャー">レジャー</option>
+    <option value="その他">その他</option>
+  </select>
+  <br><br>
+
+  メモ: <input type="text" id="memo"><br><br>
+
+  <button onclick="addRecord()">保存</button>
+
+  </div>
+
+  </div>
+
 
   <div class="card">
     <h3>データ削除</h3>
