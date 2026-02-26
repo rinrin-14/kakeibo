@@ -27,8 +27,8 @@ body {
   min-height: 100vh;
   padding: 14px;
   box-sizing: border-box;
+  padding-bottom: 80px;
 }
-
 
 /* =====================================
    1. 見出し
@@ -334,16 +334,14 @@ li {
 /* =====================================
    10. 下部タブ（ナビ）
 ===================================== */
-
 .tabs {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  max-width: 420px;
+  display: flex;
   background: #fff;
   border-top: 1px solid #ddd;
-  display: flex;
   z-index: 1000;
 }
 
@@ -812,7 +810,7 @@ const categoryRules = [
   { keyword: "ＧＯアプリ", category: "交通" },
   { keyword: "タクシー", category: "交通" },
   { keyword: "キャブ", category: "交通" },
-  { keyword: "カーシェア", category: "交通" },
+  { keyword: "カ－シェア", category: "交通" },
   { keyword: "第一交通", category: "交通" },
   { keyword: "国際自動車", category: "交通" },
   { keyword: "PASMO", category: "交通" },
@@ -885,7 +883,7 @@ function showPage(page) {
   if (expense) expense.style.display = "none";
   if (account) account.style.display = "none";
   if (report) report.style.display = "none";
-  if (manage) report.style.display = "none";
+  if (manage) manage.style.display = "none";
 
   // 表示切り替え
   if (page === "expense" && expense) {
