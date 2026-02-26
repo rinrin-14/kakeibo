@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>支出メモ</title>
 
 <style>
@@ -21,13 +22,20 @@ body {
 
 /* 中央のアプリ本体 */
 .container {
-  max-width: 420px;
+  width: 100%;
+  max-width: 600px;
   margin: 0 auto;
   background: #fff;
   min-height: 100vh;
-  padding: 14px;
+  padding: 16px;
   box-sizing: border-box;
   padding-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+  }
 }
 
 /* =====================================
