@@ -488,6 +488,37 @@ padding: 8px 4px;
       <button onclick="nextMonth()">＞</button>
     </div>
 
+    <h3>今月サマリー</h3>
+
+    <div id="dashboard" class="dashboard">
+      <div class="card">
+      <div class="card-title">銀行残高</div>
+      <div class="card-value" id="bankBalance">0円</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">今月支出</div>
+      <div class="card-value" id="monthTotal">0円</div>
+    </div>
+  </div>
+
+  <div id="summaryBox">
+
+    <div id="bigTotal">
+      今月合計<br>
+      <span id="totalAmount">0</span> 円
+    </div>
+
+    <hr>
+
+    自分カード：<span id="myCardTotal">0</span>円<br>
+    家族カード：<span id="familyCardTotal">0</span>円<br>
+    現金：<span id="cashTotal">0</span>円<br><br>
+
+    <div id="categoryTotals"></div>
+
+  </div>
+
     <h3>カテゴリフィルター</h3>
     <button onclick="toggleFilter()">フィルター</button>
 
@@ -537,55 +568,29 @@ padding: 8px 4px;
 
     </div>
 
-    <h3>今月サマリー</h3>
-
-    <div id="dashboard" class="dashboard">
-      <div class="card">
-      <div class="card-title">銀行残高</div>
-      <div class="card-value" id="bankBalance">0円</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">今月支出</div>
-      <div class="card-value" id="monthTotal">0円</div>
-    </div>
-  </div>
-
-  <div id="summaryBox">
-
-    <div id="bigTotal">
-      今月合計<br>
-      <span id="totalAmount">0</span> 円
-    </div>
-
-    <hr>
-
-    自分カード：<span id="myCardTotal">0</span>円<br>
-    家族カード：<span id="familyCardTotal">0</span>円<br>
-    現金：<span id="cashTotal">0</span>円<br><br>
-
-    <div id="categoryTotals"></div>
-
-  </div>
+  <select id="primarySort" onchange="updateDisplay()">
+    <option value="date">日付優先</option>
+    <option value="amount">金額優先</option>
+  </select>
 
   <div class="sort-box">
     並び替え：
     <select id="sortDate" onchange="updateDisplay()">
+      <option value="none">日付：ー</option>
       <option value="desc">日付：新しい順</option>
       <option value="asc">日付：古い順</option>
     </select>
 
     <select id="sortAmount" onchange="updateDisplay()">
-      <option value="none">金額：指定なし</option>
+      <option value="none">金額：ー</option>
       <option value="desc">高い順</option>
       <option value="asc">低い順</option>
     </select>
 
-    <select id="sortCategory" onchange="updateDisplay()">
-      <option value="none">カテゴリ：指定なし</option>
-      <option value="asc">A→Z</option>
-    </select>
   </div>
+
+  <input type="number" id="minAmount" placeholder="最低金額" onchange="updateDisplay()">
+  <input type="number" id="maxAmount" placeholder="最高金額" onchange="updateDisplay()">
 
   <h3>記録一覧</h3>
   <ul id="list"></ul>
@@ -1060,46 +1065,54 @@ function updateDisplay() {
 
   let categoryMap = {};
 
+  const minInput = document.getElementById("minAmount")?.value;
+  const maxInput = document.getElementById("maxAmount")?.value;
+
+  const minAmount = minInput !== "" ? Number(minInput) : -Infinity;
+  const maxAmount = maxInput !== "" ? Number(maxInput) : Infinity;
 
   // ===== 月フィルター =====
   const filteredRecords = records.filter(r => {
     const d = new Date(r.date);
+    const amount = Number(r.amount);
+
     return (
       d.getMonth() + 1 === displayMonth &&
-      d.getFullYear() === displayYear
+      d.getFullYear() === displayYear &&
+      amount >= minAmount &&
+      amount <= maxAmount
     );
   });
 
   // ===== ソート（ここに追加）=====
-  const sortDate = document.getElementById("sortDate")?.value || "desc";
+  const sortDate = document.getElementById("sortDate")?.value || "none";
   const sortAmount = document.getElementById("sortAmount")?.value || "none";
-  const sortCategory = document.getElementById("sortCategory")?.value || "none";
+
+  const primary = document.getElementById("primarySort").value;
+
+  let priority = ["date", "amount"];
+
+  priority = priority.filter(p => p !== primary);
+
+  priority.unshift(primary);
 
   filteredRecords.sort((a, b) => {
 
-    // 日付
-    if (sortDate !== "none") {
-      const diff = new Date(a.date) - new Date(b.date);
-      if (diff !== 0) {
-        return sortDate === "asc" ? diff : -diff;
+    for (let key of priority) {
+
+      if (key === "date" && sortDate !== "none") {
+        const diff = new Date(a.date) - new Date(b.date);
+        if (diff !== 0) return sortDate === "asc" ? diff : -diff;
+      }
+
+      if (key === "amount" && sortAmount !== "none") {
+        const diff = a.amount - b.amount;
+        if (diff !== 0) return sortAmount === "asc" ? diff : -diff;
       }
     }
-
-    // 金額
-    if (sortAmount !== "none") {
-      const diff = a.amount - b.amount;
-      if (diff !== 0) {
-        return sortAmount === "asc" ? diff : -diff;
-      }
-    }
-
-    // カテゴリ
-    if (sortCategory === "asc") {
-      return (a.category || "").localeCompare(b.category || "");
-    }
-  
     return 0;
   });
+
 
 
   // ===== 表示 =====
