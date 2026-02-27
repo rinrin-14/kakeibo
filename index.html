@@ -512,6 +512,7 @@ li {
   border-radius: 10px;
   background: #f7f7f7;
   font-size: 15px;
+  transition: transform 0.15s ease;
 }
 
 .cat-name {
@@ -522,6 +523,9 @@ li {
   font-weight: 600;
 }
 
+.category-row:hover {
+  transform: scale(1.03);
+}
 /* =========================
 シャープテーマ
 ========================= */
@@ -890,14 +894,15 @@ const categoryRules = [
 ];
 
 const categoryColors = {
-  "食費": "#4CAF50",
-  "外食": "#FF9800",
-  "日用品": "#2196F3",
-  "交通": "#9C27B0",
-  "固定費": "#607D8B",
-  "レジャー": "#E91E63",
-  "その他": "#9E9E9E"
+  "食費": "#FF6B6B",
+  "外食": "#FF9F43",
+  "日用品": "#4ECDC4",
+  "交通": "#5F6CAF",
+  "固定費": "#7868E6",
+  "レジャー": "#F368E0",
+  "その他": "#8395A7"
 };
+
 
 // 表示中の年月
 let displayDate = new Date();
@@ -1205,8 +1210,10 @@ function updateDisplay() {
   Object.entries(categoryMap)
     .sort((a, b) => b[1] - a[1])
     .forEach(([category, amount]) => {
+
     const row = document.createElement("div");
     row.className = "category-row";
+
 
     row.innerHTML = `
       <span class="cat-name">${category}</span>
