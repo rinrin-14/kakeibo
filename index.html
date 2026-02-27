@@ -440,6 +440,31 @@ li {
   text-overflow: ellipsis;   /* …表示 */
 }
 
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size:  13px;
+}
+
+.filter-row label {
+  width: 60px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.filter-row select,
+.filter-row input {
+  flex: 1;
+  padding: 6px;
+  font-size: 14px;
+  border-radius:  6px;
+}
+
+.filter-row button {
+  padding: 6px 12px;
+}
 
 /* =========================
 シャープテーマ
@@ -519,7 +544,8 @@ padding: 8px 4px;
 
   </div>
 
-    <h3>カテゴリフィルター</h3>
+  <div class="filter-row">
+    <label>カテゴリ</label>
     <button onclick="toggleFilter()">フィルター</button>
 
     <div id="filterPanel" style="display:none;">
@@ -567,30 +593,35 @@ padding: 8px 4px;
       </label>
 
     </div>
+  </div>
 
+<div class="filter-row">
+  <label>ソート</label>
   <select id="primarySort" onchange="updateDisplay()">
     <option value="date">日付優先</option>
     <option value="amount">金額優先</option>
   </select>
 
-  <div class="sort-box">
-    並び替え：
-    <select id="sortDate" onchange="updateDisplay()">
-      <option value="none">日付：ー</option>
-      <option value="desc">日付：新しい順</option>
-      <option value="asc">日付：古い順</option>
-    </select>
+  <select id="sortDate" onchange="updateDisplay()">
+    <option value="none">日付：—</option>
+    <option value="desc">新しい順</option>
+    <option value="asc">古い順</option>
+  </select>
 
-    <select id="sortAmount" onchange="updateDisplay()">
-      <option value="none">金額：ー</option>
-      <option value="desc">高い順</option>
-      <option value="asc">低い順</option>
-    </select>
+  <select id="sortAmount" onchange="updateDisplay()">
+    <option value="none">金額：—</option>
+    <option value="desc">高い順</option>
+    <option value="asc">低い順</option>
+  </select>
+</div>
 
-  </div>
+<div class="filter-row">
+  <label>金額</label>
+  <input type="number" id="minAmount" placeholder="最低金額" onchange ="updateDisplay()">
+  <span>〜</span>
+  <input type="number" id="maxAmount" placeholder="最高金額" onchange ="updateDisplay()">
+</div>
 
-  <input type="number" id="minAmount" placeholder="最低金額" onchange="updateDisplay()">
-  <input type="number" id="maxAmount" placeholder="最高金額" onchange="updateDisplay()">
 
   <h3>記録一覧</h3>
   <ul id="list"></ul>
