@@ -466,6 +466,62 @@ li {
   padding: 6px 12px;
 }
 
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.category-chip {
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: #f1f3f6;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.category-chip.active {
+  background: #4f7df3;
+  color: white;
+  transform: scale(0.95);
+}
+
+#bigTotal {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.total-label {
+  font-size: 14px;
+  color: #888;
+}
+
+.total-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: #f7f7f7;
+  font-size: 15px;
+}
+
+.cat-name {
+  color: #333;
+}
+
+.cat-amount {
+  font-weight: 600;
+}
+
 /* =========================
 シャープテーマ
 ========================= */
@@ -513,32 +569,14 @@ padding: 8px 4px;
       <button onclick="nextMonth()">＞</button>
     </div>
 
-    <h3>今月サマリー</h3>
-
-    <div id="dashboard" class="dashboard">
-      <div class="card">
-      <div class="card-title">銀行残高</div>
-      <div class="card-value" id="bankBalance">0円</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">今月支出</div>
-      <div class="card-value" id="monthTotal">0円</div>
-    </div>
-  </div>
-
   <div id="summaryBox">
 
     <div id="bigTotal">
-      今月合計<br>
-      <span id="totalAmount">0</span> 円
+      <div class="total-label">今月合計</div>
+      <div class="total-value" id="totalAmount">0円</div>
     </div>
 
     <hr>
-
-    自分カード：<span id="myCardTotal">0</span>円<br>
-    家族カード：<span id="familyCardTotal">0</span>円<br>
-    現金：<span id="cashTotal">0</span>円<br><br>
 
     <div id="categoryTotals"></div>
 
@@ -546,52 +584,15 @@ padding: 8px 4px;
 
   <div class="filter-row">
     <label>カテゴリ</label>
-    <button onclick="toggleFilter()">フィルター</button>
 
-    <div id="filterPanel" style="display:none;">
-
-      <!-- ボタン専用エリア -->
-      <div class="filter-actions">
-        <button onclick="selectAllCategories()">全選択</button>
-        <button onclick="clearAllCategories()">全解除</button>
-      </div>
-
-      <!-- カテゴリ一覧（今まで通りlabelでOK） -->
-      <label>
-        <span>食費</span>
-        <input type="checkbox" value="食費" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>外食</span>
-        <input type="checkbox" value="外食" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>日用品</span>
-        <input type="checkbox" value="日用品" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>交通</span>
-        <input type="checkbox" value="交通" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>固定費</span>
-        <input type="checkbox" value="固定費" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>レジャー</span>
-        <input type="checkbox" value="レジャー" checked onchange="updateDisplay()">
-      </label>
-
-      <label>
-        <span>その他</span>
-        <input type="checkbox" value="その他" checked onchange="updateDisplay()">
-      </label>
-
+    <div id="categoryFilter" class="category-filter">
+      <span class="category-chip" data-category="食費">食費</span>
+      <span class="category-chip" data-category="外食">外食</span>
+      <span class="category-chip" data-category="日用品">日用品</span>
+      <span class="category-chip" data-category="交通">交通</span>
+      <span class="category-chip" data-category="固定費">固定費</span>
+      <span class="category-chip" data-category="レジャー">レジャー</span>
+      <span class="category-chip" data-category="その他">その他</span>
     </div>
   </div>
 
@@ -639,7 +640,7 @@ padding: 8px 4px;
     <div id="bankMonthlyChange" class="balance-change"></div>
   </div>
 
-  <h3>銀行明細（最新20件）</h3>
+  <h3>取引明細</h3>
   <div id="bankList" class="bank-list"></div>
 
 </div>
@@ -1058,8 +1059,8 @@ function clearAllCategories() {
 
 // 選択カテゴリ取得（updateDisplayで使う）
 function getSelectedCategories() {
-  const checks = document.querySelectorAll("#filterPanel input[type='checkbox']:checked");
-  return Array.from(checks).map(c => c.value);
+  const chips = document.querySelectorAll(".category-chip.active");
+  return Array.from(chips).map(chip => chip.dataset.category);
 }
 
 // =======================
@@ -1086,10 +1087,6 @@ function updateDisplay() {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  // ===== 選択カテゴリ =====
-  const checkedBoxes = document.querySelectorAll("#filterPanel input:checked");
-  const selectedCategories = Array.from(checkedBoxes).map(cb => cb.value);
-
   let myCard = 0;
   let familyCard = 0;
   let cash = 0;
@@ -1107,11 +1104,19 @@ function updateDisplay() {
     const d = new Date(r.date);
     const amount = Number(r.amount);
 
+    const selectedCategories = [
+      ...document.querySelectorAll(".category-chip.active")
+    ].map(chip => chip.dataset.category);
+
     return (
       d.getMonth() + 1 === displayMonth &&
       d.getFullYear() === displayYear &&
       amount >= minAmount &&
-      amount <= maxAmount
+      amount <= maxAmount &&
+      (
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(r.category)
+      )
     );
   });
 
@@ -1152,9 +1157,6 @@ function updateDisplay() {
     const originalIndex = records.indexOf(r);
 
     const category = r.category || "その他";
-
-    // カテゴリフィルター
-    if (!selectedCategories.includes(category)) return;
 
     const li = document.createElement("li");
 
@@ -1197,21 +1199,31 @@ function updateDisplay() {
   }
 
   // ===== カテゴリ表示 =====
-  const categoryDiv = document.getElementById("categoryTotals");
-  categoryDiv.innerHTML = "";
+  const categoryTotalsDiv = document.getElementById("categoryTotals");
+  categoryTotalsDiv.innerHTML = "";
 
-  for (let cat in categoryMap) {
-    categoryDiv.innerHTML +=
-      `${cat}：${categoryMap[cat].toLocaleString()}円<br>`;
-  }
+  Object.entries(categoryMap)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([category, amount]) => {
+    const row = document.createElement("div");
+    row.className = "category-row";
+
+    row.innerHTML = `
+      <span class="cat-name">${category}</span>
+      <span class="cat-amount">${amount.toLocaleString()}円</span>
+    `;
+
+    categoryTotalsDiv.appendChild(row);
+  });
 
   // ===== 総合計 =====
-  document.getElementById("myCardTotal").textContent = myCard;
-  document.getElementById("familyCardTotal").textContent = familyCard;
-  document.getElementById("cashTotal").textContent = cash;
+  const total = filteredRecords.reduce(
+    (sum, r) => sum + Number(r.amount),
+    0
+  );
 
-  const total = myCard + familyCard + cash;
-  document.getElementById("totalAmount").textContent = total.toLocaleString();
+document.getElementById("totalAmount").textContent =
+  total.toLocaleString();
 
   updateMonthlyReport();
 
@@ -1321,7 +1333,10 @@ function drawMonthlyChartByCategory() {
     const key = d.getFullYear() + "-" + (d.getMonth() + 1);
     const category = r.category || "その他";
 
-    if (!selectedCategories.includes(category)) return;
+    if (
+      selectedCategories.length > 0 &&
+      !selectedCategories.includes(category)
+    ) return;
 
     if (!monthMap[key]) monthMap[key] = {};
     monthMap[key][category] =
@@ -2063,6 +2078,14 @@ function toggleForm() {
     form.style.display = "none";
   }
 }
+
+// ===== カテゴリチップクリック処理 =====
+document.querySelectorAll(".category-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    chip.classList.toggle("active");
+    updateDisplay();
+  });
+});
 
 
 </script>
