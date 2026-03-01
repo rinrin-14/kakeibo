@@ -754,6 +754,12 @@ padding: 8px 4px;
     </button>
   </div>
 
+  <div class="card">
+    <h3>バックアップ</h3>
+    <button onclick="exportBackup()">バックアップ保存</button>
+    <input type="file" id="importFile" accept=".json" onchange="importBackup(event)" />
+  </div>
+
 </div>
 
 
@@ -784,10 +790,15 @@ padding: 8px 4px;
 // =======================
 // 初期データ読み込み
 // =======================
-let records = JSON.parse(localStorage.getItem("records")) || [];
+let appData = JSON.parse(localStorage.getItem("familyAppData")) || {
+  records: [],
+  bankRecords: [],
+  latestBankBalance: 0
+};
 
-// ===== 銀行データ（追加）=====
-let bankRecords = JSON.parse(localStorage.getItem("bankRecords")) || [];
+let records = appData.records;
+let bankRecords = appData.bankRecords;
+let latestBankBalance = appData.latestBankBalance;
 
 const categoryRules = [
 
@@ -1870,7 +1881,7 @@ function addRecord() {
     memo: memo
   });
 
-  localStorage.setItem("records", JSON.stringify(records));
+  saveData();
   updateDisplay();
 
   // 入力リセット
@@ -1897,7 +1908,7 @@ function nextMonth() {
 // =======================
 function deleteRecord(index) {
   records.splice(index, 1);
-  localStorage.setItem("records", JSON.stringify(records));
+  saveData();
   updateDisplay();
 }
 
@@ -1966,7 +1977,7 @@ function importCSV() {
       }
     }
 
-    localStorage.setItem("records", JSON.stringify(records));
+    saveData();
     updateDisplay();
 
     alert(addedCount + "件取り込みました");
@@ -2058,7 +2069,7 @@ function importBankCSV() {
       added++;
     }
 
-    localStorage.setItem("bankRecords", JSON.stringify(bankRecords));
+    saveData();
 
     alert(added + "件取り込みました");
 
@@ -2072,7 +2083,7 @@ function importBankCSV() {
 
 function changeCategory(index, newCategory) {
   records[index].category = newCategory;
-  localStorage.setItem("records", JSON.stringify(records));
+  saveData();
   updateDisplay();
 }
 
@@ -2094,6 +2105,48 @@ document.querySelectorAll(".category-chip").forEach(chip => {
   });
 });
 
+function exportBackup() {
+  const dataStr = JSON.stringify(appData, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "family_kakeibo_backup.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+
+      localStorage.setItem("familyAppData", JSON.stringify(importedData));
+
+      alert("復元完了！ページをリロードします。");
+      location.reload();
+
+    } catch (error) {
+      alert("読み込み失敗。JSONファイル確認してね。");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+function saveData() {
+  appData.records = records;
+  appData.bankRecords = bankRecords;
+  appData.latestBankBalance = latestBankBalance;
+
+  localStorage.setItem("familyAppData", JSON.stringify(appData));
+}
 
 </script>
 </div>
